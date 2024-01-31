@@ -1,6 +1,7 @@
 #ifndef leg_h
 #define leg_h
 
+#include <Magnum/Timeline.h>
 #include "joint.h"
 
 #include <Magnum/Math/Quaternion.h>
@@ -41,9 +42,10 @@ public:
     }
 
     // Function to update the leg
-    void update() {
-        // Calculate the inverse kinematics
+    void update(float deltaTime) {
+        HandleAnimation(deltaTime);
 
+        // Calculate the inverse kinematics
         if (showIK)
             CalculateIK();
 
@@ -87,6 +89,48 @@ public:
         BaseJoint->_angle = - angle_1;
     }
 
+    void NewAnimation(){
+        if (!this->_animationPlaying){
+            this->_deltaVector = this->_desiredPose - this->_endPose;
+            
+            this->_previousEndPose = this->_endPose;
+            this->_speedConstant = _deltaVector.lengthInverted() * this->_speed;
+
+            this->_animationPlaying = true;
+        }
+        else {
+            // Debug{} << "New Animation was not created";
+        }
+    }
+    void NewAnimation(Vector3 desiredPose){
+        if (!this->_animationPlaying){
+            this->_desiredPose = desiredPose;
+            this->_deltaVector = this->_desiredPose - this->_endPose;
+            this->_animationPlaying = true;
+        }
+        else {
+            // Debug{} << "New Animation was not created";
+        }
+    }
+
+    void HandleAnimation(Float deltaTime){
+        // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
+        // then the endpose has not reached the desiredpose yet
+        
+        if (_animationPlaying){
+            if ((this->_desiredPose - this->_previousEndPose).length() >= (this->_desiredPose - this->_endPose).length()){
+                // reset the previous end pose to the current end pose
+                this->_previousEndPose = this->_endPose;
+                // update the endpose position so that it is always "infront" of the previouspose
+                this->_endPose += this->_deltaVector * this->_speedConstant * deltaTime;
+            }
+            else {
+                this->_endPose = this->_desiredPose;
+                this->_animationPlaying = false;
+            }
+        }
+    }
+
     // Member variables
     Joint* BaseJoint;
     Joint* SecondJoint;
@@ -94,6 +138,9 @@ public:
 
     Joint* DesiredJoint;
 
+    bool _animationPlaying = false;
+    Float _speed = 0.5f;
+    Float _speedConstant = 0.3f;
     Vector3 _endPose;
     Vector3 _previousEndPose;
 

@@ -52,7 +52,7 @@ public:
     // Update leg positions and rotations using arrays
     for (int i = 0; i < numLegs; i++) {
         updateLeg(i);
-        legs[i]->update();
+        legs[i]->update(deltaTime);
     }
 
     // Update the draw object for visualization
@@ -79,35 +79,35 @@ public:
       .setScaling(_scale);
   }
 
-  void showDebugging(){
-    if (showDebuggingWindow){
-      ImGui::Begin("Body Debugging");
-
-      ImGui::SeparatorText("Body Position and Rotation");
-      ImGui::PushItemWidth(120);
-      float bodyposition[3] = {
-        _position.x(),
-        _position.y(),
-        _position.z()
-      };
-      if (ImGui::DragFloat3("Position - Body", bodyposition, 0.01f)){
-      _position = Vector3(
-          bodyposition[0],
-          bodyposition[1],
-          bodyposition[2]
-      );
-      }
-
-      ImGui::End();
-    }
-  }
+  float rotation[3] = {0.0f, 0.0f, 0.0f};
+  float position[3] = {0.0f, 0.0f, 0.0f};
 
   void showBodyControl(){
     ImGui::Begin("Body Control");
 
-    if (ImGui::RadioButton("Debugging", showDebuggingWindow)){
-      showDebuggingWindow = !showDebuggingWindow;
+    ImGui::SeparatorText("Body Position/Rotation");
+    ImGui::PushItemWidth(120);
+    
+    position[0] = _position.x();
+    position[1] = _position.y();
+    position[2] = _position.z();
+    if (ImGui::DragFloat3("Position - Body", position, 0.01f)){
+    _position = Vector3(
+        position[0],
+        position[1],
+        position[2]
+    );
     }
+
+    if(ImGui::DragFloat3("Rotation - Body", rotation, 0.01f)){
+      Quaternion combinedRotation;
+      combinedRotation = combinedRotation * Quaternion::rotation(Rad(rotation[0]), Vector3::xAxis()); 
+      combinedRotation = combinedRotation * Quaternion::rotation(Rad(rotation[1]), Vector3::yAxis()); 
+      combinedRotation = combinedRotation * Quaternion::rotation(Rad(rotation[2]), Vector3::zAxis());
+
+      _rotation = combinedRotation;
+    }
+    
 
     ImGui::SeparatorText("Modes");
     bool isModeMovement = (mode == MOVEMENT) ? true : false; 
@@ -128,7 +128,6 @@ public:
 
   void showGUI(){
     showBodyControl();
-    showDebugging();
   }
 
 private:

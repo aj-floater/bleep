@@ -1,5 +1,3 @@
-#include <Magnum/Timeline.h>
-
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
@@ -182,22 +180,37 @@ void MyApplication::renderGUI() {
       ImGui::EndMenu();
     }
 
+    // debuggingLeg->showDebugging();
+
+    body->showGUI();
+
     ImGui::EndMainMenuBar();
   }
 
   { // Leg Debugging
     ImGui::Begin("Leg Debugging");
     
-    if (ImGui::RadioButton("Play", playing)){
-      playing = !playing;
+    float desiredpose[3] = {
+    debuggingLeg->_desiredPose.x(),
+    debuggingLeg->_desiredPose.y(),
+    debuggingLeg->_desiredPose.z()
+    };
+    if (ImGui::DragFloat3("Position", desiredpose, 0.01f)){
+      debuggingLeg->_desiredPose = Vector3(
+        desiredpose[0],
+        desiredpose[1],
+        desiredpose[2]
+      );
+    }
+
+    ImGui::DragFloat("Speed", &debuggingLeg->_speed, 0.1f, 0.0f, 30.0f);
+    if (ImGui::Button("Play")){
+      debuggingLeg->NewAnimation();
     };
 
     ImGui::End();
   }
 
-  debuggingLeg->showDebugging();
-
-  body->showGUI();
 
   controller->showGUI();
 
@@ -221,31 +234,14 @@ void MyApplication::renderGUI() {
   GL::Renderer::disable(GL::Renderer::Feature::Blending);
 }
 
-bool start = true;
-Float speed = 0.3f;
-
 void MyApplication::drawEvent() {
   GL::defaultFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
 
   controller->update();
 
-  {    
-    if (start){
-      debuggingLeg->_deltaVector = debuggingLeg->_desiredPose - debuggingLeg->_endPose;
-      start = false;
-    }
-
-    // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
-    // then the endpose has not reached the desiredpose yet
-    if ((debuggingLeg->_desiredPose - debuggingLeg->_previousEndPose).length() > (debuggingLeg->_desiredPose - debuggingLeg->_endPose).length()){
-      // reset the previous end pose to the current end pose
-      debuggingLeg->_previousEndPose = debuggingLeg->_endPose;
-      // update the endpose position so that it is always "infront" of the previouspose
-      debuggingLeg->_endPose += debuggingLeg->_deltaVector * speed * _timeline.currentFrameDuration();
-    }
-  }
-
-  debuggingLeg->update();
+  // debuggingLeg->NewAnimation();
+ 
+  debuggingLeg->update(_timeline.currentFrameDuration());
 
   body->update(_timeline.currentFrameDuration());
 

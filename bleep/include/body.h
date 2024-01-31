@@ -43,7 +43,7 @@ public:
     // Update leg positions and rotations using arrays
     for (int i = 0; i < numLegs; i++) {
       updateLeg(i);
-      legs[i]->update();
+      legs[i]->update(deltaTime);
     }
   }
 
