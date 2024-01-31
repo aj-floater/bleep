@@ -221,23 +221,28 @@ void MyApplication::renderGUI() {
   GL::Renderer::disable(GL::Renderer::Feature::Blending);
 }
 
-
+bool start = true;
+Float speed = 0.3f;
 
 void MyApplication::drawEvent() {
   GL::defaultFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
 
   controller->update();
 
-  {
-    Float speed = 0.3f;
-    if ((debuggingLeg->_desiredPose - debuggingLeg->_endPose).length() < (debuggingLeg->_desiredPose - debuggingLeg->_previousEndPose).length()){
+  {    
+    if (start){
       debuggingLeg->_deltaVector = debuggingLeg->_desiredPose - debuggingLeg->_endPose;
-      Debug{} << "Found";
+      start = false;
     }
 
-    debuggingLeg->_endPose += debuggingLeg->_deltaVector * speed * _timeline.currentFrameDuration();
-
-    debuggingLeg->_previousEndPose = debuggingLeg->_endPose;
+    // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
+    // then the endpose has not reached the desiredpose yet
+    if ((debuggingLeg->_desiredPose - debuggingLeg->_previousEndPose).length() > (debuggingLeg->_desiredPose - debuggingLeg->_endPose).length()){
+      // reset the previous end pose to the current end pose
+      debuggingLeg->_previousEndPose = debuggingLeg->_endPose;
+      // update the endpose position so that it is always "infront" of the previouspose
+      debuggingLeg->_endPose += debuggingLeg->_deltaVector * speed * _timeline.currentFrameDuration();
+    }
   }
 
   debuggingLeg->update();

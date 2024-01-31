@@ -39,3 +39,4 @@ Thumbs.db
 # Build Files #
 ###############
 build
+.cache
