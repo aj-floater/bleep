@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.5)
 project(MyApplication)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
@@ -7,6 +7,9 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
 add_subdirectory(corrade EXCLUDE_FROM_ALL)
 
 # Add Magnum as a subproject, enable Sdl2Application
+if (WIN32)
+    set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/SDL2-2.0.10 ${CMAKE_PREFIX_PATH})
+endif()
 set(MAGNUM_WITH_SDL2APPLICATION ON CACHE BOOL "" FORCE)
 set(MAGNUM_WITH_ANYIMAGEIMPORTER ON CACHE BOOL "" FORCE)
 set(MAGNUM_WITH_ANYSCENEIMPORTER ON CACHE BOOL "" FORCE)

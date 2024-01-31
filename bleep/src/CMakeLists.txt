@@ -1,3 +1,6 @@
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/magnum/modules/" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/magnum-integration/modules/" ${CMAKE_MODULE_PATH})
+
 find_package(Corrade REQUIRED Main)
 find_package(Magnum REQUIRED
     GL
@@ -10,8 +13,6 @@ find_package(Magnum REQUIRED
 find_package(MagnumIntegration REQUIRED ImGui)
 
 find_package(MagnumPlugins REQUIRED AssimpImporter)
-
-find_package(Eigen3 REQUIRED)
 
 set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
