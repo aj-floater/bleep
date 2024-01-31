@@ -16,3 +16,6 @@
 [submodule "magnum-plugins"]
 	path = magnum-plugins
 	url = https://github.com/mosra/magnum-plugins.git
+[submodule "SDL"]
+	path = SDL
+	url = https://github.com/libsdl-org/SDL.git
