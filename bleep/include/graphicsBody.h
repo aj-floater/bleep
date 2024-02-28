@@ -49,6 +49,40 @@ public:
   }
 
   void update(Float deltaTime) {
+    {
+      updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs desiredPose's)
+
+      // Loop through the legs according to the gaitorder array and animate them accordingly
+      // ------------------------------------------------------------------------------------------------------------------------
+      int legFinishedAnimatingCount = 0; // a counter that counts how many legs have finished animating
+      for (int i = 0; i < 6; i++){
+        // 1. First we check if the leg is labelled as one that should be moved
+        if (gaitorder[i] == gaittoggle){
+          // 2. If it is then check if it already has an animation applied to it
+          if (!legs[i]->_animationPlaying)
+            legs[i]->NewAnimation(); // 3. If not then apply it
+          // 4. If it has then mark it in the gait order as a leg that has been animated (or is being animated)
+          else gaitorder[i] = 2;
+        }
+        // 5. Now we know that when the leg is marked and the animation is no longer playing, the animation must have finished
+        //    so we increment the counter
+        if (!legs[i]->_animationPlaying && gaitorder[i] == 2){
+          legFinishedAnimatingCount++;
+        }
+      }
+      // 6. When all three legs have finished animating we can reset the gait order and invert the gaittoggle for the next set of legs
+      if (legFinishedAnimatingCount >= 3){
+        for (int i = 0; i < 6; i++){
+          if (gaitorder[i] == 2) gaitorder[i] = gaittoggle;
+        }
+
+        if (gaittoggle == 0) gaittoggle = 1; else gaittoggle = 0;
+      }
+      // ------------------------------------------------------------------------------------------------------------------------
+
+      HandleAnimation(deltaTime);
+    }
+
     // Update leg positions and rotations using arrays
     for (int i = 0; i < numLegs; i++) {
         updateLeg(i);
@@ -57,6 +91,14 @@ public:
 
     // Update the draw object for visualization
     updateDrawObject();
+  }
+
+  void updatePhantomBody(){
+    _phantomPosition = Vector3(controllerPointer->leftJoystick.x() + _position.x(), 0, controllerPointer->leftJoystick.y() + _position.z());
+    _phantomRotation = _rotation.rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+    for (int i = 0; i < numLegs; i++) {
+      legs[i]->_desiredPose = _phantomRotation.transformVector(_phantomPosition + legDesiredPoses[i]);
+    }
   }
 
   // Function to initialize the MeshDrawable for visualization
@@ -141,6 +183,11 @@ private:
   MeshDrawable* _meshdrawable;
   Vector3 _meshposition;
   Quaternion _meshrotation;
+
+  int gaittoggle = 0;
+  int gaitorder[6] =  { 0, 1,
+                        0, 1, 
+                        0, 1 };
 
   bool showDebuggingWindow = false;
   int mode = ROTATION;

@@ -90,27 +90,21 @@ public:
     }
 
     void NewAnimation(){
-        if (!this->_animationPlaying){
-            this->_deltaVector = this->_desiredPose - this->_endPose;
-            
-            this->_previousEndPose = this->_endPose;
-            this->_speedConstant = _deltaVector.lengthInverted() * this->_speed;
+        // Check if the animation is actually necessary
+        if ((this->_desiredPose - this->_endPose).length() < 0.2) return;
+        // The animation is necessary
+        this->_finalAnimationPose = this->_desiredPose;
+        this->_deltaVector = this->_finalAnimationPose - this->_endPose;
+        
+        this->_previousEndPose = this->_endPose;
+        this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
 
-            this->_animationPlaying = true;
-        }
-        else {
-            // Debug{} << "New Animation was not created";
-        }
+        this->_animationPlaying = true;
     }
     void NewAnimation(Vector3 desiredPose){
-        if (!this->_animationPlaying){
-            this->_desiredPose = desiredPose;
-            this->_deltaVector = this->_desiredPose - this->_endPose;
-            this->_animationPlaying = true;
-        }
-        else {
-            // Debug{} << "New Animation was not created";
-        }
+        this->_finalAnimationPose = desiredPose;
+        this->_deltaVector = this->_finalAnimationPose - this->_endPose;
+        this->_animationPlaying = true;
     }
 
     void HandleAnimation(Float deltaTime){
@@ -118,14 +112,14 @@ public:
         // then the endpose has not reached the desiredpose yet
         
         if (_animationPlaying){
-            if ((this->_desiredPose - this->_previousEndPose).length() >= (this->_desiredPose - this->_endPose).length()){
+            if ((this->_finalAnimationPose - this->_previousEndPose).length() >= (this->_finalAnimationPose - this->_endPose).length()){
                 // reset the previous end pose to the current end pose
                 this->_previousEndPose = this->_endPose;
                 // update the endpose position so that it is always "infront" of the previouspose
-                this->_endPose += this->_deltaVector * this->_speedConstant * deltaTime;
+                this->_endPose += this->_deltaVector * this->_speed * deltaTime;
             }
             else {
-                this->_endPose = this->_desiredPose;
+                this->_endPose = this->_finalAnimationPose;
                 this->_animationPlaying = false;
             }
         }
@@ -139,12 +133,13 @@ public:
     Joint* DesiredJoint;
 
     bool _animationPlaying = false;
-    Float _speed = 0.5f;
-    Float _speedConstant = 0.3f;
+    Float _speed;
+    Float _speedConstant = 2.0f;
     Vector3 _endPose;
     Vector3 _previousEndPose;
 
     Vector3 _travelVector;
+    Vector3 _finalAnimationPose;
     Vector3 _desiredPose;
     Vector3 _deltaVector;
 
