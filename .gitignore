@@ -40,3 +40,7 @@ Thumbs.db
 ###############
 build
 .cache
+
+# OS Compatibility #
+###############
+SDL2-2.0.10

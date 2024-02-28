@@ -50,7 +50,7 @@ public:
 
   void update(Float deltaTime) {
     {
-      updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs desiredPose's)
+      updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs d)
 
       // Loop through the legs according to the gaitorder array and animate them accordingly
       // ------------------------------------------------------------------------------------------------------------------------
