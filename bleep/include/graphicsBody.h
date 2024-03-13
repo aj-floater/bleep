@@ -52,32 +52,25 @@ public:
     {
       updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs d)
 
-      // Loop through the legs according to the gaitorder array and animate them accordingly
+      // Loop through the legs and animate them accordingly
       // ------------------------------------------------------------------------------------------------------------------------
-      int legFinishedAnimatingCount = 0; // a counter that counts how many legs have finished animating
-      for (int i = 0; i < 6; i++){
-        // 1. First we check if the leg is labelled as one that should be moved
-        if (gaitorder[i] == gaittoggle){
-          // 2. If it is then check if it already has an animation applied to it
-          if (!legs[i]->_animationPlaying)
-            legs[i]->NewAnimation(); // 3. If not then apply it
-          // 4. If it has then mark it in the gait order as a leg that has been animated (or is being animated)
-          else gaitorder[i] = 2;
-        }
-        // 5. Now we know that when the leg is marked and the animation is no longer playing, the animation must have finished
-        //    so we increment the counter
-        if (!legs[i]->_animationPlaying && gaitorder[i] == 2){
-          legFinishedAnimatingCount++;
-        }
-      }
-      // 6. When all three legs have finished animating we can reset the gait order and invert the gaittoggle for the next set of legs
-      if (legFinishedAnimatingCount >= 3){
-        for (int i = 0; i < 6; i++){
-          if (gaitorder[i] == 2) gaitorder[i] = gaittoggle;
-        }
+      // Calculate desired positions of the first set based off currentPosition using the phantomPosition and phantomRotation
+      // Store the phantom as deltaPosition and deltaRotation - in delta -
+      
+      // Move first set to calculated desired positions
 
-        if (gaittoggle == 0) gaittoggle = 1; else gaittoggle = 0;
-      }
+      // Set toggle to 2
+      // Loop   --------
+      // Calculate desired positions of the "toggle" set based off the delta and new phantom
+
+      // Move "toggle" set to calculated desired positions
+      
+      // Move and rotate the body to the delta
+
+      // Store the phantom - in delta -
+
+      // Toggle the toggle
+      // --------
       // ------------------------------------------------------------------------------------------------------------------------
 
       HandleAnimation(deltaTime);
@@ -184,10 +177,7 @@ private:
   Vector3 _meshposition;
   Quaternion _meshrotation;
 
-  int gaittoggle = 0;
-  int gaitorder[6] =  { 0, 1,
-                        0, 1, 
-                        0, 1 };
+  
 
   bool showDebuggingWindow = false;
   int mode = ROTATION;
