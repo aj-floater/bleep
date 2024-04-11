@@ -102,9 +102,9 @@ public:
         this->_animationPlaying = true;
     }
     void NewAnimation(Vector3 desiredPose){
+        if ((desiredPose - this->_endPose).length() < 0.02) return;
+        
         this->_finalAnimationPose = desiredPose;
-
-        if ((this->_desiredPose - this->_endPose).length() < 0.2) return;
 
         this->_deltaVector = this->_finalAnimationPose - this->_endPose;
         

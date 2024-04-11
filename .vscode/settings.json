@@ -1,6 +1,10 @@
 {
     "dotnet.defaultSolution": "disable",
     "files.associations": {
-        "cstdlib": "cpp"
+        "cstdlib": "cpp",
+        "__availability": "cpp",
+        "__hash_table": "cpp",
+        "*.cmake": "cpp",
+        "typeinfo": "cpp"
     }
 }

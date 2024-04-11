@@ -17,6 +17,33 @@ extern Scene3D _scene;
 #define MOVEMENT 0
 #define ROTATION 1
 
+#define FIRST 1
+#define SECOND 2
+#define THIRD 3
+
+#define IDLE 0
+#define SCHEDULED 1
+#define ENGAGED 2
+
+class Phase {
+public:
+  int first; // Encoded status 
+  int second; // Encoded status 
+  int third; // Encoded status 
+
+  // Default constructor that initializes name and status to default values
+  Phase() : first(IDLE), second(IDLE), third(IDLE) {}  // Common convention for default values
+  // Function to get a human-readable string for the status
+  static const char* GetStatusString(int status) {
+    switch (status) {
+      case IDLE: return "Idle";
+      case SCHEDULED: return "Scheduled";
+      case ENGAGED: return "Engaged";
+      default: return "Unknown";
+    }
+  }
+};
+
 // Create GraphicsBody class that inherits from Body
 class GraphicsBody : public Body {
 public:
@@ -60,74 +87,99 @@ public:
     return true;
   }
 
+  bool joysticksCentered = false;
+
+  Phase phase;
+
+  Quaternion deltaRotation;
+  Vector3 deltaPosition;
+  
+  Quaternion phantomRotation;
+  Vector3 phantomPosition;
+
   void update(Float deltaTime) {
     HandleAnimation(deltaTime);
 
     {
-      // updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs d)
 
-      // Loop through the legs and animate them accordingly
-      if (!controllerPointer->CheckIfJoysticksCentered()){
-        // ------------------------------------------------------------------------------------------------------------------------
-        if (!_started){
+      if (controllerPointer->CheckIfJoysticksCentered()){
+        joysticksCentered = true;
+        // reset
+        phase.first = SCHEDULED;
+        phase.second = IDLE;
+      }
+      else {
+        joysticksCentered = false;
+
+        // First Phase --------------
+        if (phase.first == SCHEDULED){
           // Calculate desired positions of the first set based off currentPosition using the phantomPosition and phantomRotation
           // Store the phantom as deltaPosition and deltaRotation - in delta -
-          deltaRotation = _rotation + Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          deltaRotation = _rotation * Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
           deltaPosition = _position + Vector3(
-            controllerPointer->leftJoystick.x(), 
+            controllerPointer->leftJoystick.x() * 0.4, 
             0, 
-            controllerPointer->leftJoystick.y()
+            controllerPointer->leftJoystick.y() * 0.4
           );
           // Move first set to calculated desired positions
           for (int i = 0; i < 6; i++){
             if (_gaitOrder[i] == _gaitToggle){
-              legs[i]->NewAnimation(deltaRotation.transformVector(deltaPosition) + legDesiredPoses[i]);
+              legs[i]->NewAnimation(deltaPosition + deltaRotation.transformVector(legDesiredPoses[i]));
             }
           }
-
-          // Set toggle to 2
-          _gaitToggle = 2;
-          _started = true;
-          _firstMove = true;
+          phase.first = ENGAGED;
         }
-        else if (CheckIfAnimationsFinished()) {
+        
+        // Second Phase -------------
+        if (phase.second == SCHEDULED){
           // Loop   --------
           // Calculate desired positions of the "toggle" set based off the delta and new phantom
-          Quaternion phantomRotation = Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
-          Vector3 phantomPosition = Vector3(
-            controllerPointer->leftJoystick.x(), 
+          phantomRotation = Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          phantomPosition = Vector3(
+            controllerPointer->leftJoystick.x() * 0.4, 
             0, 
-            controllerPointer->leftJoystick.y()
+            controllerPointer->leftJoystick.y() * 0.4
           );
           // Move "toggle" set to calculated desired positions
-          Vector3 _desiredLegPosition = phantomPosition + deltaPosition;
+          Vector3 _desiredPosition = phantomPosition + deltaPosition;
+          Quaternion _desiredRotation = phantomRotation * deltaRotation;
           for (int i = 0; i < 6; i++){
             if (_gaitOrder[i] == _gaitToggle){
-              legs[i]->NewAnimation(phantomRotation.transformVector(legDesiredPoses[i]) + _desiredLegPosition);
+              legs[i]->NewAnimation(_desiredRotation.transformVector(legDesiredPoses[i]) + _desiredPosition);
             }
           }
 
-          // Store the phantom - in delta -
-          deltaPosition = deltaPosition + phantomPosition;
-          deltaRotation = deltaRotation + phantomRotation;
-
-          // Move and rotate the body to the delta
-          if (_firstMove){
-            NewAnimation(deltaPosition, deltaRotation, 1.0f);
-            _firstMove = false;
+          phase.second = ENGAGED;
+        }
+        
+        { // Phase Handler
+          int counter = 0;
+          for (int i = 0; i < 6; i++){
+            if (legs[i]->_animationPlaying)
+              counter++;
           }
-          else
-            NewAnimation(deltaPosition, deltaRotation, 0.5f);
-          // deltaRotation += tempRotation;
+          if (counter == 0){
+            if (phase.first == ENGAGED){
+              phase.second = SCHEDULED;
+              phase.first = IDLE;
 
-          // Toggle the toggle
-          if (_gaitToggle==1) _gaitToggle = 2;
-          else if (_gaitToggle==2) _gaitToggle = 1;
-          // --------
+              _gaitToggle = 2;
+            }
+            if (phase.second == ENGAGED){
+              phase.second = SCHEDULED;
+
+              _position = deltaPosition;
+              deltaPosition += phantomPosition;
+
+              _rotation = deltaRotation;
+              deltaRotation = phantomRotation * deltaRotation;
+
+              if (_gaitToggle==1) _gaitToggle = 2;
+              else if (_gaitToggle==2) _gaitToggle = 1;
+            }
+          }
         }
       }
-      else _started = false;
-      // ------------------------------------------------------------------------------------------------------------------------
     }
 
 
@@ -140,22 +192,6 @@ public:
     // Update the draw object for visualization
     updateDrawObject();
   }
-
-  Quaternion deltaRotation;
-  Vector3 deltaPosition;
-
-  // void updatePhantomBody(){
-  //   _phantomRotation = Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
-  //   _phantomPosition = Vector3(
-  //     controllerPointer->leftJoystick.x() + _phantomRotation.transformVector(_position).x(), 
-  //     0, 
-  //     controllerPointer->leftJoystick.y() + _phantomRotation.transformVector(_position).z()
-  //   );
-    
-  //   for (int i = 0; i < numLegs; i++) {
-  //     legs[i]->_desiredPose = _phantomRotation.transformVector(_phantomPosition + legDesiredPoses[i]);
-  //   }
-  // }
 
   // Function to initialize the MeshDrawable for visualization
   void initMeshDrawObject(std::string meshFile) {
@@ -224,8 +260,38 @@ public:
     ImGui::End();
   }
 
+  void showPhases() {
+    // Create a window
+    ImGui::Begin("Phase Status");
+
+    // Temporary array to store status colors
+    ImVec4 statusColors[4];
+    statusColors[IDLE] = ImVec4(1.0f, 0.65f, 0.0f, 1.0f); // Orange
+    statusColors[SCHEDULED] = ImVec4(0.0f, 1.0f, 0.0f, 1.0f); // Green
+    statusColors[ENGAGED] = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Red
+    statusColors[3] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); // White (Unknown)
+
+    // Display the status of each phase with color
+    for (int i = 0; i < 3; ++i) {
+      const char* phaseName = (i == 0) ? "Phase 1" : (i == 1) ? "Phase 2" : "Phase 3";
+      int status = (i == 0) ? phase.first : (i == 1) ? phase.second : phase.third;
+      ImGui::PushStyleColor(ImGuiCol_Text, statusColors[status]);
+      ImGui::Text("%s: %s", phaseName, Phase::GetStatusString(status));
+      ImGui::PopStyleColor();
+    }
+
+    ImGui::Spacing();
+
+    ImGui::Text("Gait Toggle: %i", _gaitToggle);
+
+    // End the window
+    ImGui::End();
+  }
+
+
   void showGUI(){
     showBodyControl();
+    showPhases();
   }
 
 private:
