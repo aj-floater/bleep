@@ -48,33 +48,88 @@ public:
     legs[i]->_rotation = _rotation;
   }
 
+  bool CheckIfAnimationsFinished(){
+    for (int i = 0; i < 6; i++){
+      // Debug{} << legs[i]->_animationPlaying;
+      if (legs[i]->_animationPlaying){
+        return false;
+      }
+    }
+    // if (_animationPlaying) return false;
+
+    return true;
+  }
+
   void update(Float deltaTime) {
+    HandleAnimation(deltaTime);
+
     {
-      updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs d)
+      // updatePhantomBody(); // update the phantom body's position and rotation (as well as each legs d)
 
       // Loop through the legs and animate them accordingly
+      if (!controllerPointer->CheckIfJoysticksCentered()){
+        // ------------------------------------------------------------------------------------------------------------------------
+        if (!_started){
+          // Calculate desired positions of the first set based off currentPosition using the phantomPosition and phantomRotation
+          // Store the phantom as deltaPosition and deltaRotation - in delta -
+          deltaRotation = _rotation + Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          deltaPosition = _position + Vector3(
+            controllerPointer->leftJoystick.x(), 
+            0, 
+            controllerPointer->leftJoystick.y()
+          );
+          // Move first set to calculated desired positions
+          for (int i = 0; i < 6; i++){
+            if (_gaitOrder[i] == _gaitToggle){
+              legs[i]->NewAnimation(deltaRotation.transformVector(deltaPosition) + legDesiredPoses[i]);
+            }
+          }
+
+          // Set toggle to 2
+          _gaitToggle = 2;
+          _started = true;
+          _firstMove = true;
+        }
+        else if (CheckIfAnimationsFinished()) {
+          // Loop   --------
+          // Calculate desired positions of the "toggle" set based off the delta and new phantom
+          Quaternion phantomRotation = Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          Vector3 phantomPosition = Vector3(
+            controllerPointer->leftJoystick.x(), 
+            0, 
+            controllerPointer->leftJoystick.y()
+          );
+          // Move "toggle" set to calculated desired positions
+          Vector3 _desiredLegPosition = phantomPosition + deltaPosition;
+          for (int i = 0; i < 6; i++){
+            if (_gaitOrder[i] == _gaitToggle){
+              legs[i]->NewAnimation(phantomRotation.transformVector(legDesiredPoses[i]) + _desiredLegPosition);
+            }
+          }
+
+          // Store the phantom - in delta -
+          deltaPosition = deltaPosition + phantomPosition;
+          deltaRotation = deltaRotation + phantomRotation;
+
+          // Move and rotate the body to the delta
+          if (_firstMove){
+            NewAnimation(deltaPosition, deltaRotation, 1.0f);
+            _firstMove = false;
+          }
+          else
+            NewAnimation(deltaPosition, deltaRotation, 0.5f);
+          // deltaRotation += tempRotation;
+
+          // Toggle the toggle
+          if (_gaitToggle==1) _gaitToggle = 2;
+          else if (_gaitToggle==2) _gaitToggle = 1;
+          // --------
+        }
+      }
+      else _started = false;
       // ------------------------------------------------------------------------------------------------------------------------
-      // Calculate desired positions of the first set based off currentPosition using the phantomPosition and phantomRotation
-      // Store the phantom as deltaPosition and deltaRotation - in delta -
-      
-      // Move first set to calculated desired positions
-
-      // Set toggle to 2
-      // Loop   --------
-      // Calculate desired positions of the "toggle" set based off the delta and new phantom
-
-      // Move "toggle" set to calculated desired positions
-      
-      // Move and rotate the body to the delta
-
-      // Store the phantom - in delta -
-
-      // Toggle the toggle
-      // --------
-      // ------------------------------------------------------------------------------------------------------------------------
-
-      HandleAnimation(deltaTime);
     }
+
 
     // Update leg positions and rotations using arrays
     for (int i = 0; i < numLegs; i++) {
@@ -86,13 +141,21 @@ public:
     updateDrawObject();
   }
 
-  void updatePhantomBody(){
-    _phantomPosition = Vector3(controllerPointer->leftJoystick.x() + _position.x(), 0, controllerPointer->leftJoystick.y() + _position.z());
-    _phantomRotation = _rotation.rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
-    for (int i = 0; i < numLegs; i++) {
-      legs[i]->_desiredPose = _phantomRotation.transformVector(_phantomPosition + legDesiredPoses[i]);
-    }
-  }
+  Quaternion deltaRotation;
+  Vector3 deltaPosition;
+
+  // void updatePhantomBody(){
+  //   _phantomRotation = Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+  //   _phantomPosition = Vector3(
+  //     controllerPointer->leftJoystick.x() + _phantomRotation.transformVector(_position).x(), 
+  //     0, 
+  //     controllerPointer->leftJoystick.y() + _phantomRotation.transformVector(_position).z()
+  //   );
+    
+  //   for (int i = 0; i < numLegs; i++) {
+  //     legs[i]->_desiredPose = _phantomRotation.transformVector(_phantomPosition + legDesiredPoses[i]);
+  //   }
+  // }
 
   // Function to initialize the MeshDrawable for visualization
   void initMeshDrawObject(std::string meshFile) {
@@ -177,8 +240,16 @@ private:
   Vector3 _meshposition;
   Quaternion _meshrotation;
 
+  float _stepSize = 1.0f;
+  bool _started = false;
+  bool _firstMove = true;
+  int _gaitToggle = 1;
+  int _gaitOrder[6] = {
+    1, 2, 
+    1, 2, 
+    1, 2
+  };
   
-
   bool showDebuggingWindow = false;
   int mode = ROTATION;
 };

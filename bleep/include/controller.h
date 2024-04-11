@@ -46,14 +46,12 @@ public:
     if (isnan(rightJoystick.y())) rightJoystick.y() = 0;
   }
 
-  void CheckIfJoysticksCentered(){
+  bool CheckIfJoysticksCentered(){
     // Checks if both joysticks are centered (or close enough to be considered centered)
     if (abs(leftJoystick.x()) <= 0.1 && abs(leftJoystick.y()) <= 0.1 && abs(rightJoystick.x()) <= 0.1 && abs(rightJoystick.y()) <= 0.1){
-      centered = true;
+      return true;
     } 
-    else if (centered == true){
-      centered = false;
-    }
+    else return false;
   }
 
   Vector2 leftJoystick;

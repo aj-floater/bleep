@@ -40,42 +40,63 @@ public:
   }
 
   void update(Float deltaTime) {
+    HandleAnimation(deltaTime);
 
     // Update leg positions and rotations using arrays
     for (int i = 0; i < numLegs; i++) {
       updateLeg(i);
       legs[i]->update(deltaTime);
     }
+
   }
 
-  void NewAnimation(){
-        if (!this->_animationPlaying){
-            this->_deltaVector = this->_phantomPosition - this->_position;
-            
-            this->_previousPosition = this->_position;
-            this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
+  void NewAnimation(Vector3 desiredPose, Quaternion desiredRotation, float speedConstant){
+      this->_finalAnimationPose = desiredPose;
+      this->_finalAnimationRotation = desiredRotation;
 
-            this->_animationPlaying = true;
-        }
-        else {
-            // Debug{} << "New Animation was not created";
-        }
-    }
+      // if ((this->_desiredPose - this->_endPose).length() < 0.2) return;
+
+      this->_deltaVector = this->_finalAnimationPose - this->_position;
+      this->_deltaQuaternion = this->_finalAnimationRotation - this->_rotation;
+      
+      this->_previousPosition = this->_position;
+      this->_previousRotation = this->_rotation;
+      this->_speed = _deltaVector.lengthInverted() * speedConstant;
+      this->_rotationSpeed = 1/abs(Float(_deltaQuaternion.normalized().angle())) * speedConstant;
+
+      this->_animationPlaying = true;
+      this->_animationPosePlaying = true;
+      this->_animationRotationPlaying = true;
+  }
+
   void HandleAnimation(Float deltaTime){
       // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
       // then the endpose has not reached the desiredpose yet
       
       if (_animationPlaying){
-          if ((this->_phantomPosition - this->_previousPosition).length() >= (this->_phantomPosition - this->_position).length()){
+          if ((this->_finalAnimationPose - this->_previousPosition).length() >= (this->_finalAnimationPose - this->_position).length()){
               // reset the previous end pose to the current end pose
               this->_previousPosition = this->_position;
               // update the endpose position so that it is always "infront" of the previouspose
-              this->_position += this->_deltaVector * this->_speedConstant * deltaTime;
+              this->_position += this->_deltaVector * this->_speed * deltaTime;
           }
           else {
-              this->_position = this->_phantomPosition;
-              this->_animationPlaying = false;
+              this->_position = this->_finalAnimationPose;
+              this->_animationPosePlaying = false;
           }
+
+          if ((this->_finalAnimationRotation - this->_previousRotation).length() >= (this->_finalAnimationRotation - this->_rotation).length()){
+            // reset the previous end pose to the current end pose
+            this->_previousRotation = this->_rotation;
+            // update the endpose position so that it is always "infront" of the previouspose
+            _rotation = _rotation * _deltaQuaternion * _rotationSpeed * deltaTime;
+          }
+          else {
+              this->_rotation = this->_finalAnimationRotation;
+              this->_animationRotationPlaying = false;
+          }
+
+          if (!_animationRotationPlaying && !_animationPosePlaying) _animationPlaying = false;
       }
   }
 
@@ -115,17 +136,22 @@ public:
   Controller* controllerPointer;
 
   Quaternion _rotation;
-  Vector3 _position;
-  Vector3 _previousPosition;
 
   bool _animationPlaying = false;
+  bool _animationPosePlaying = false;
+  bool _animationRotationPlaying = false;
   Float _speed;
-  Float _speedConstant = 0.5f;
-  Vector3 _travelVector;
-  Vector3 _deltaVector;
+  Float _rotationSpeed;
+  Vector3 _position;
+  Vector3 _previousPosition;
+  Quaternion _previousRotation;
 
-  Quaternion _phantomRotation;
-  Vector3 _phantomPosition;
+  Vector3 _travelVector;
+  Vector3 _finalAnimationPose;
+  Quaternion _finalAnimationRotation;
+  Vector3 _desiredPose;
+  Vector3 _deltaVector;
+  Quaternion _deltaQuaternion;
 };
 
 #endif

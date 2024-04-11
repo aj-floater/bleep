@@ -79,7 +79,7 @@ public:
         if (showIK)
             CalculateIK();
 
-        desiredPoseCube->update(_desiredPose);
+        desiredPoseCube->update(_finalAnimationPose);
 
         // Propagate throughout all joints in the leg
         // to calculate the forward kinematics given the individual joint angles

@@ -103,7 +103,14 @@ public:
     }
     void NewAnimation(Vector3 desiredPose){
         this->_finalAnimationPose = desiredPose;
+
+        if ((this->_desiredPose - this->_endPose).length() < 0.2) return;
+
         this->_deltaVector = this->_finalAnimationPose - this->_endPose;
+        
+        this->_previousEndPose = this->_endPose;
+        this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
+
         this->_animationPlaying = true;
     }
 
@@ -134,7 +141,7 @@ public:
 
     bool _animationPlaying = false;
     Float _speed;
-    Float _speedConstant = 2.0f;
+    Float _speedConstant = 1.0f;
     Vector3 _endPose;
     Vector3 _previousEndPose;
 
