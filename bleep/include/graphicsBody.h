@@ -115,17 +115,22 @@ public:
         if (phase.first == SCHEDULED){
           // Calculate desired positions of the first set based off currentPosition using the phantomPosition and phantomRotation
           // Store the phantom as deltaPosition and deltaRotation - in delta -
-          deltaRotation = Quaternion::rotation(Rad(-0.2 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          float rotationMultiplier = 2 * asinf(_stepSize / 4.0f);
+          deltaRotation = Quaternion::rotation(Rad(-rotationMultiplier * controllerPointer->rightJoystick.x()), Vector3::yAxis());
           deltaPosition = Vector3(
-            controllerPointer->leftJoystick.x() * 0.4, 
+            controllerPointer->leftJoystick.x() * _stepSize, 
             0, 
-            controllerPointer->leftJoystick.y() * 0.4
+            controllerPointer->leftJoystick.y() * _stepSize
           );
+          // the idea is to treat the new rotation from the controller seperately and add it to the previous rotation
           deltaRotation = deltaRotation * _rotation;
+          // while transforming the position using the new rotation and adding the current position (ignoring the height the body is off the ground)
           deltaPosition = deltaRotation.transformVector(deltaPosition) + Vector3(_position.x(), 0, _position.z());
           // Move first set to calculated desired positions
           for (int i = 0; i < 6; i++){
             if (_gaitOrder[i] == _gaitToggle){
+              // apply the new rotation to the desired leg positions
+              // then add the transformed position
               legs[i]->NewAnimation( deltaRotation.transformVector(legDesiredPoses[i]) + deltaPosition );
             }
           }
@@ -136,11 +141,12 @@ public:
         if (phase.second == SCHEDULED){
           // Loop   --------
           // Calculate desired positions of the "toggle" set based off the delta and new phantom
-          phantomRotation = Quaternion::rotation(Rad(-0.2 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          float rotationMultiplier = 2 * asinf(_stepSize / 4.0f);
+          phantomRotation = Quaternion::rotation(Rad(-rotationMultiplier * controllerPointer->rightJoystick.x()), Vector3::yAxis());
           phantomPosition = Vector3(
-            controllerPointer->leftJoystick.x() * 0.4, 
+            controllerPointer->leftJoystick.x() * _stepSize, 
             0, 
-            controllerPointer->leftJoystick.y() * 0.4
+            controllerPointer->leftJoystick.y() * _stepSize
           );
           phantomPosition = (_rotation * phantomRotation).transformVector(phantomPosition);
           // Move "toggle" set to calculated desired positions
@@ -307,9 +313,7 @@ private:
   Vector3 _meshposition;
   Quaternion _meshrotation;
 
-  float _stepSize = 1.0f;
-  bool _started = false;
-  bool _firstMove = true;
+  float _stepSize = 0.4f;
   int _gaitToggle = 1;
   int _gaitOrder[6] = {
     1, 2, 

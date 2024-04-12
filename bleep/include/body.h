@@ -123,10 +123,10 @@ public:
   // Constants for leg desired end effector poses
   Vector3 legDesiredPoses[numLegs] = {
     Vector3(1.5f, 0.0f, 1.8f),
-    Vector3(2.0f, 0.0f, 0.0f),
+    Vector3(2.0f, 0.0f, 0.001f),
     Vector3(1.5f, 0.0f, -1.8f),
     Vector3(-1.5f, 0.0f, 1.8f),
-    Vector3(-2.0f, 0.0f, 0.0f),
+    Vector3(-2.0f, 0.0f, 0.001f),
     Vector3(-1.5f, 0.0f, -1.8f)
   };
 
