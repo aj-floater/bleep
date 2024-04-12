@@ -141,7 +141,7 @@ public:
 
     bool _animationPlaying = false;
     Float _speed;
-    Float _speedConstant = 1.0f;
+    Float _speedConstant = 5.0f;
     Vector3 _endPose;
     Vector3 _previousEndPose;
 

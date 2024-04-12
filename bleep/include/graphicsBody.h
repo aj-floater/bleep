@@ -115,16 +115,18 @@ public:
         if (phase.first == SCHEDULED){
           // Calculate desired positions of the first set based off currentPosition using the phantomPosition and phantomRotation
           // Store the phantom as deltaPosition and deltaRotation - in delta -
-          deltaRotation = _rotation * Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
-          deltaPosition = _position + Vector3(
+          deltaRotation = Quaternion::rotation(Rad(-0.2 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          deltaPosition = Vector3(
             controllerPointer->leftJoystick.x() * 0.4, 
             0, 
             controllerPointer->leftJoystick.y() * 0.4
           );
+          deltaRotation = deltaRotation * _rotation;
+          deltaPosition = deltaRotation.transformVector(deltaPosition) + Vector3(_position.x(), 0, _position.z());
           // Move first set to calculated desired positions
           for (int i = 0; i < 6; i++){
             if (_gaitOrder[i] == _gaitToggle){
-              legs[i]->NewAnimation(deltaPosition + deltaRotation.transformVector(legDesiredPoses[i]));
+              legs[i]->NewAnimation( deltaRotation.transformVector(legDesiredPoses[i]) + deltaPosition );
             }
           }
           phase.first = ENGAGED;
@@ -134,18 +136,17 @@ public:
         if (phase.second == SCHEDULED){
           // Loop   --------
           // Calculate desired positions of the "toggle" set based off the delta and new phantom
-          phantomRotation = Quaternion::rotation(Rad(-0.4 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
+          phantomRotation = Quaternion::rotation(Rad(-0.2 * controllerPointer->rightJoystick.x()), Vector3::yAxis());
           phantomPosition = Vector3(
             controllerPointer->leftJoystick.x() * 0.4, 
             0, 
             controllerPointer->leftJoystick.y() * 0.4
           );
+          phantomPosition = (_rotation * phantomRotation).transformVector(phantomPosition);
           // Move "toggle" set to calculated desired positions
-          Vector3 _desiredPosition = phantomPosition + deltaPosition;
-          Quaternion _desiredRotation = phantomRotation * deltaRotation;
           for (int i = 0; i < 6; i++){
             if (_gaitOrder[i] == _gaitToggle){
-              legs[i]->NewAnimation(_desiredRotation.transformVector(legDesiredPoses[i]) + _desiredPosition);
+              legs[i]->NewAnimation( deltaRotation.transformVector(legDesiredPoses[i]) + deltaPosition + phantomPosition);
             }
           }
 
@@ -168,11 +169,11 @@ public:
             if (phase.second == ENGAGED){
               phase.second = SCHEDULED;
 
-              _position = deltaPosition;
+              _position = Vector3(deltaPosition.x(), _position.y(), deltaPosition.z());
               deltaPosition += phantomPosition;
 
               _rotation = deltaRotation;
-              deltaRotation = phantomRotation * deltaRotation;
+              deltaRotation = deltaRotation * phantomRotation;
 
               if (_gaitToggle==1) _gaitToggle = 2;
               else if (_gaitToggle==2) _gaitToggle = 1;
