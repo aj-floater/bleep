@@ -70,6 +70,8 @@ public:
 
   void viewportEvent(ViewportEvent& event) override;
 
+  void anyEvent(SDL_Event& event) override;
+
   void keyPressEvent(KeyEvent& event) override;
   void keyReleaseEvent(KeyEvent& event) override;
 
@@ -103,6 +105,8 @@ MyApplication::MyApplication(const Arguments& arguments):
     .setWindowFlags(Configuration::WindowFlag::Resizable)}
 {
   using namespace Math::Literals;
+  init_gamepad();
+  controller->init();
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
 
@@ -296,6 +300,42 @@ void MyApplication::keyPressEvent(KeyEvent& event) {
         default:
             break;
     }
+}
+
+void MyApplication::anyEvent(SDL_Event& event) {
+  switch(event.type)
+  {  
+    case SDL_JOYAXISMOTION:  /* Handle Joystick Motion */
+      if( event.jaxis.axis == 0) 
+      {
+        float value = event.jaxis.value;
+        controller->leftJoystick.x() = value / 32767.0f;
+        // Debug{} << value / 32767.0f;
+        // Debug{} << "/* Left-right movement code goes here */";
+      }
+      if( event.jaxis.axis == 1) 
+      {
+        float value = event.jaxis.value;
+        controller->leftJoystick.y() = value / 32767.0f;
+        // Debug{} << value / 32767.0f;
+        // Debug{} << "/* Left-right movement code goes here */";
+      }
+      if( event.jaxis.axis == 2) 
+      {
+        float value = event.jaxis.value;
+        controller->rightJoystick.x() = value / 32767.0f;
+        // Debug{} << value / 32767.0f;
+        // Debug{} << "/* Left-right movement code goes here */";
+      }
+      if( event.jaxis.axis == 3) 
+      {
+        float value = event.jaxis.value;
+        controller->rightJoystick.y() = value / 32767.0f;
+        // Debug{} << value / 32767.0f;
+        // Debug{} << "/* Left-right movement code goes here */";
+      }
+    break;
+  }
 }
 
 void MyApplication::keyReleaseEvent(KeyEvent& event) {

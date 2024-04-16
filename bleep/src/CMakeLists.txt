@@ -28,7 +28,24 @@ add_dependencies(bleep
     Magnum::AnySceneImporter
     MagnumPlugins::AssimpImporter)
 
-target_link_libraries(bleep PRIVATE
+if(APPLE)
+    find_library(CoreFoundation CoreFoundation)
+    find_library(IOKit IOKit)
+    target_link_libraries(bleep PRIVATE 
+        "-framework CoreFoundation -framework IOKit"
+        Corrade::Main
+        Magnum::Application
+        Magnum::GL
+        Magnum::Magnum
+        Magnum::MeshTools
+        Magnum::Primitives
+        Magnum::SceneGraph
+        Magnum::Shaders
+        Magnum::Trade
+        MagnumIntegration::ImGui
+        )
+elseif()
+    target_link_libraries(bleep PRIVATE 
     Corrade::Main
     Magnum::Application
     Magnum::GL
@@ -38,7 +55,9 @@ target_link_libraries(bleep PRIVATE
     Magnum::SceneGraph
     Magnum::Shaders
     Magnum::Trade
-    MagnumIntegration::ImGui)
+    MagnumIntegration::ImGui
+    )
+endif()
 
 install(TARGETS bleep DESTINATION ${MAGNUM_BINARY_INSTALL_DIR})
 
