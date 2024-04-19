@@ -97,7 +97,7 @@ public:
         this->_deltaVector = this->_finalAnimationPose - this->_endPose;
         
         this->_previousEndPose = this->_endPose;
-        this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
+        // this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
 
         this->_animationPlaying = true;
     }
@@ -109,7 +109,7 @@ public:
         this->_deltaVector = this->_finalAnimationPose - this->_endPose;
         
         this->_previousEndPose = this->_endPose;
-        this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
+        // this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
 
         this->_animationPlaying = true;
     }
@@ -123,7 +123,7 @@ public:
                 // reset the previous end pose to the current end pose
                 this->_previousEndPose = this->_endPose;
                 // update the endpose position so that it is always "infront" of the previouspose
-                this->_endPose += this->_deltaVector * this->_speed * deltaTime;
+                this->_endPose += this->_deltaVector * (deltaTime / this->_stepTime);
             }
             else {
                 this->_endPose = this->_finalAnimationPose;
@@ -140,8 +140,7 @@ public:
     Joint* DesiredJoint;
 
     bool _animationPlaying = false;
-    Float _speed;
-    Float _speedConstant = 5.0f;
+    Float _stepTime = 0.3f;
     Vector3 _endPose;
     Vector3 _previousEndPose;
 

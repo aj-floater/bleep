@@ -207,7 +207,7 @@ void MyApplication::renderGUI() {
       );
     }
 
-    ImGui::DragFloat("Speed", &debuggingLeg->_speed, 0.1f, 0.0f, 30.0f);
+    ImGui::DragFloat("StepTime", &debuggingLeg->_stepTime, 0.1f, 0.0f, 30.0f);
     if (ImGui::Button("Play")){
       debuggingLeg->NewAnimation();
     };
@@ -318,7 +318,7 @@ void MyApplication::anyEvent(SDL_Event& event) {
         float value = event.jaxis.value;
         controller->leftJoystick.y() = value / 32767.0f;
         // Debug{} << value / 32767.0f;
-        // Debug{} << "/* Left-right movement code goes here */";
+        // Debug{} << "/* Up-Down movement code goes here */";
       }
       if( event.jaxis.axis == 2) 
       {
@@ -332,7 +332,7 @@ void MyApplication::anyEvent(SDL_Event& event) {
         float value = event.jaxis.value;
         controller->rightJoystick.y() = value / 32767.0f;
         // Debug{} << value / 32767.0f;
-        // Debug{} << "/* Left-right movement code goes here */";
+        // Debug{} << "/* Up-Down movement code goes here */";
       }
     break;
   }

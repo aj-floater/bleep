@@ -171,6 +171,12 @@ public:
 
     position = ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowWidth()/2 + 50, ImGui::GetWindowPos().y + ImGui::GetWindowHeight()/2);
     DrawJoystick(rightJoystick.x(), rightJoystick.y(), position, 40);
+    
+    ImGui::InvisibleButton("Spacer", ImVec2(1.0f, 100.0f)); // Creates 50px horizontal and 20px vertical space
+
+    if (ImGui::Button("Search...")){
+      init_gamepad();
+    };
 
     ImGui::End();
   }
@@ -195,6 +201,13 @@ public:
     // if (isnan(leftJoystick.y())) leftJoystick.y() = 0;
     // if (isnan(rightJoystick.x())) rightJoystick.x() = 0;
     // if (isnan(rightJoystick.y())) rightJoystick.y() = 0;
+  }
+
+  float GetLeftJoystickScalar() {
+    return sqrt(pow(leftJoystick.x(), 2) + pow(leftJoystick.y(), 2));
+  }
+  float GetRightJoystickScalar() {
+    return sqrt(pow(rightJoystick.x(), 2) + pow(rightJoystick.y(), 2));
   }
 
   bool CheckIfJoysticksCentered(){

@@ -9,6 +9,7 @@
 
 using namespace Magnum;
 using namespace Math::Literals;
+// using namespace Math;
 
 // Forward declarations
 extern SceneGraph::DrawableGroup3D _drawables;
@@ -52,7 +53,7 @@ public:
     _color = color;
     _scale = Vector3(10.1f);
 
-    _position = Vector3(0.0f, 0.25f, 0.0f);
+    _position = Vector3(0.0f, 0.8f, 0.0f);
 
     // Initialize legs using arrays
     for (int i = 0; i < numLegs; i++) {
@@ -156,6 +157,8 @@ public:
             }
           }
 
+          this->NewAnimation(Vector3(deltaPosition.x() + phantomPosition.x()/2, _position.y(), deltaPosition.z() + phantomPosition.z()/2), deltaRotation, 5.0f);
+
           phase.second = ENGAGED;
         }
         
@@ -175,7 +178,7 @@ public:
             if (phase.second == ENGAGED){
               phase.second = SCHEDULED;
 
-              _position = Vector3(deltaPosition.x(), _position.y(), deltaPosition.z());
+              // _position = Vector3(deltaPosition.x(), _position.y(), deltaPosition.z());
               deltaPosition += phantomPosition;
 
               _rotation = deltaRotation;
@@ -250,18 +253,11 @@ public:
     }
     
 
-    ImGui::SeparatorText("Modes");
-    bool isModeMovement = (mode == MOVEMENT) ? true : false; 
-    if (ImGui::RadioButton("Movement - Mode", isModeMovement)){
-      isModeMovement = !isModeMovement;
-      if (isModeMovement)
-        mode = MOVEMENT;
-    }
-    bool isModeRotation = (mode == ROTATION) ? true : false; 
-    if (ImGui::RadioButton("Rotation - Mode", isModeRotation)){
-      isModeRotation = !isModeRotation;
-      if (isModeRotation)
-        mode = ROTATION;
+    ImGui::SeparatorText("Control");
+    if(ImGui::DragFloat("Step Time", &_stepTime, 0.01f)){
+      for (int i = 0; i < numLegs; i++){
+        legs[i]->_stepTime = _stepTime;
+      }
     }
 
     ImGui::End();
