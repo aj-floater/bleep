@@ -111,8 +111,20 @@ public:
                 // update the endpose position so that it is always "infront" of the previouspose
                 vectorTime += deltaTime;
                 float phase = (vectorTime / _stepTime);
-                _endPose = Math::lerp(_startPose, _finalAnimationPose, phase);
-            
+                // Adding step height
+                Vector3 stepHeight;
+                if (phase < 0.5){
+                    float easeOutPhase = - 4*powf(phase,2) + 4*phase;
+                    stepHeight = Math::lerp(Vector3(0), Vector3(0, 0.2f, 0), Math::clamp(easeOutPhase, 0.0f, 1.0f));
+                }
+                else if (phase > 0.5){
+                    float easeOutPhase = - 4*powf(phase,2) + 4*phase;
+                    stepHeight = Math::lerp(Vector3(0, 0.2f, 0), Vector3(0), Math::clamp(1-easeOutPhase, 0.0f, 1.0f));
+                }
+                else stepHeight = Vector3(0.0f);
+
+                // Finalise endposition
+                _endPose = Math::lerp(_startPose, _finalAnimationPose, phase) + stepHeight;
             }
             if (vectorTime / _stepTime >= 1){
                 _animationPlaying = false;
@@ -128,13 +140,12 @@ public:
     Joint* DesiredJoint;
 
     bool _animationPlaying = false;
-    Float _stepTime = 0.3f;
     Vector3 _endPose;
     Vector3 _startPose;
 
     Vector3 _travelVector;
     Vector3 _finalAnimationPose;
-    Vector3 _desiredPose;
+
     Vector3 _deltaVector;
 
     Quaternion _rotation;

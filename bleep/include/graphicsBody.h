@@ -68,7 +68,7 @@ public:
   void initLeg(int i) {
     legs[i]->_position = _position + legOffsetPositions[i];
     legs[i]->_endPose = legDesiredPoses[i];
-    legs[i]->_desiredPose = legDesiredPoses[i];
+    // legs[i]->_desiredPose = legDesiredPoses[i];
   }
 
   void updateLeg(int i){
@@ -106,10 +106,17 @@ public:
       if (controllerPointer->CheckIfJoysticksCentered()){
         joysticksCentered = true;
         // reset
-        phase.first = SCHEDULED;
-        phase.second = IDLE;
+        if (phase.first == SCHEDULED || phase.second == SCHEDULED){
+          phase.first = IDLE;
+          phase.second = IDLE;
+          phase.third = SCHEDULED;
+        }
       }
-      else {
+      else if (phase.first == IDLE && phase.second == IDLE && phase.third == IDLE){
+        phase.first = SCHEDULED;
+      }
+
+      if (phase.first != IDLE || phase.second != IDLE || phase.third != IDLE) {
         joysticksCentered = false;
 
         // First Phase --------------
@@ -167,6 +174,21 @@ public:
 
           phase.second = ENGAGED;
         }
+        // Third Phase -------------
+        if (phase.third == SCHEDULED){
+          Vector3 _groundPosition = Vector3(
+            _position.x(),
+            0,
+            _position.z()
+          );
+          for (int i = 0; i < 6; i++){
+            if (_gaitOrder[i] == _gaitToggle){
+              legs[i]->NewAnimation( _rotation.transformVector(legDesiredPoses[i]) + _groundPosition );
+            }
+          }
+
+          phase.third = ENGAGED;
+        }
         
         { // Phase Handler
           int counter = 0;
@@ -191,6 +213,26 @@ public:
 
               if (_gaitToggle==1) _gaitToggle = 2;
               else if (_gaitToggle==2) _gaitToggle = 1;
+            }
+            if (phase.third == ENGAGED){
+              Vector3 _groundPosition = Vector3(
+                _position.x(),
+                0,
+                _position.z()
+              );
+              counter = 0;
+              for (int i = 0; i < 6; i++){
+                Vector3 desiredPosition = _rotation.transformVector(legDesiredPoses[i]) + _groundPosition;
+                if ((legs[i]->_endPose - desiredPosition).length() < 0.05f)
+                  counter++;
+              }
+              if (counter <= 5){
+                phase.third = SCHEDULED;
+
+                if (_gaitToggle==1) _gaitToggle = 2;
+                else if (_gaitToggle==2) _gaitToggle = 1;
+              }
+              else phase.third = IDLE;
             }
           }
         }
@@ -258,11 +300,9 @@ public:
     }
 
     ImGui::SeparatorText("Control");
-    if(ImGui::DragFloat("Step Time", &_stepTime, 0.01f)){
-      for (int i = 0; i < numLegs; i++){
-        legs[i]->_stepTime = _stepTime;
-      }
-    }
+    ImGui::DragFloat("Step Time", &_stepTime, 0.01f);
+
+    ImGui::DragFloat("Step Size", &_stepSize, 0.01f);
 
     ImGui::End();
   }
@@ -320,14 +360,6 @@ private:
   MeshDrawable* _meshdrawable;
   Vector3 _meshposition;
   Quaternion _meshrotation;
-
-  float _stepSize = 0.4f;
-  int _gaitToggle = 1;
-  int _gaitOrder[6] = {
-    1, 2, 
-    1, 2, 
-    1, 2
-  };
   
   bool showDebuggingWindow = false;
   int mode = ROTATION;

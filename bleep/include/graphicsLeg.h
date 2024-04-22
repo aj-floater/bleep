@@ -34,7 +34,7 @@ public:
         ThirdJoint->_meshrotation = Quaternion::rotation(270.0_degf, Vector3::xAxis());
         ThirdJoint->initMeshDrawObject(std::string(MODELS_DIR) + "/thirdJoint.stl");
 
-        desiredPoseCube = new Cube(Color3(0.2f, 0.2f, 0.9f), 0.1f, _desiredPose);
+        desiredPoseCube = new Cube(Color3(0.2f, 0.2f, 0.9f), 0.1f, _finalAnimationPose);
     } 
 
     void CalculateIK(){
@@ -165,18 +165,18 @@ public:
                 legendpose[2]
             );
             }
-            float legdesiredpose[3] = {
-            _desiredPose.x(),
-            _desiredPose.y(),
-            _desiredPose.z()
-            };
-            if (ImGui::DragFloat3("Desired Pose - Leg", legdesiredpose, 0.01f)){
-            _desiredPose = Vector3(
-                legdesiredpose[0],
-                legdesiredpose[1],
-                legdesiredpose[2]
-            );
-            }
+            // float legdesiredpose[3] = {
+            // _desiredPose.x(),
+            // _desiredPose.y(),
+            // _desiredPose.z()
+            // };
+            // if (ImGui::DragFloat3("Desired Pose - Leg", legdesiredpose, 0.01f)){
+            // _desiredPose = Vector3(
+            //     legdesiredpose[0],
+            //     legdesiredpose[1],
+            //     legdesiredpose[2]
+            // );
+            // }
 
             
             ImGui::PushItemWidth(120);

@@ -99,7 +99,6 @@ public:
     }
         
     if (_animationRotationPlaying){
-      Debug{} << "rotationTime " << rotationTime << "stepTime " << _stepTime;
       if (rotationTime / _stepTime <= 1.3){
         // update the endpose position so that it is always "infront" of the previouspose
         rotationTime += deltaTime;
@@ -157,7 +156,14 @@ public:
   bool _animationPlaying = false;
   bool _animationPosePlaying = false;
   bool _animationRotationPlaying = false;
-  Float _stepTime = 0.3f;
+
+  int _gaitToggle = 1;
+  int _gaitOrder[6] = {
+    1, 2, 
+    1, 2, 
+    1, 2
+  };
+
   Vector3 _position;
 
   Vector3 _startPose;

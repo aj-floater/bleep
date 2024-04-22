@@ -23,6 +23,10 @@
 #include "controller.h"
 #include "cubeDrawable.h"
 #include "meshDrawable.h"
+
+float _stepTime = 0.3f;
+float _stepSize = 0.4f;
+
 #include "graphicsBody.h"
 
 using namespace Magnum;
@@ -141,7 +145,7 @@ MyApplication::MyApplication(const Arguments& arguments):
   debuggingLeg->showDebuggingWindow = true;
   debuggingLeg->showMeshes = true;
   debuggingLeg->_position = Vector3(5.0f, 0.0f, 0.0f);
-  debuggingLeg->_desiredPose = Vector3(6.5f, 0.0f, 0.8f);
+  debuggingLeg->_finalAnimationPose = Vector3(6.5f, 0.0f, 0.8f);
   debuggingLeg->_endPose = Vector3(7.0f, 0.0f, 0.0f);
 
   body = new GraphicsBody(Color3(0.75f, 0.75f, 0.75f));
@@ -195,19 +199,18 @@ void MyApplication::renderGUI() {
     ImGui::Begin("Leg Debugging");
     
     float desiredpose[3] = {
-    debuggingLeg->_desiredPose.x(),
-    debuggingLeg->_desiredPose.y(),
-    debuggingLeg->_desiredPose.z()
+    debuggingLeg->_finalAnimationPose.x(),
+    debuggingLeg->_finalAnimationPose.y(),
+    debuggingLeg->_finalAnimationPose.z()
     };
     if (ImGui::DragFloat3("Position", desiredpose, 0.01f)){
-      debuggingLeg->_desiredPose = Vector3(
+      debuggingLeg->_finalAnimationPose = Vector3(
         desiredpose[0],
         desiredpose[1],
         desiredpose[2]
       );
     }
 
-    ImGui::DragFloat("StepTime", &debuggingLeg->_stepTime, 0.1f, 0.0f, 30.0f);
     if (ImGui::Button("Play")){
       debuggingLeg->NewAnimation(Vector3(desiredpose[0], desiredpose[1], desiredpose[2]));
     };
@@ -333,6 +336,16 @@ void MyApplication::anyEvent(SDL_Event& event) {
         controller->rightJoystick.y() = value / 32767.0f;
         // Debug{} << value / 32767.0f;
         // Debug{} << "/* Up-Down movement code goes here */";
+      }
+      if( event.jaxis.axis == 4) 
+      {
+        float value = event.jaxis.value;
+        _stepTime = 0.275f - (value / 32767.0f + 1) * 0.0875f;
+      }
+      if( event.jaxis.axis == 5) 
+      {
+        float value = event.jaxis.value;
+        _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
       }
     break;
   }
