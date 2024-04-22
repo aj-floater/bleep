@@ -18,6 +18,112 @@ using namespace Math::Literals;
 
 class Body {
 public:
+  // Constructor
+  Body() {
+    _position = Vector3(0.0f, 0.8f, 0.0f);
+
+    // Initialize legs using arrays
+    for (int i = 0; i < numLegs; i++) {
+      legs[i] = new Leg();
+      initLeg(i);
+    }
+  }
+
+  void initLeg(int i) {
+    legs[i]->_position = _position + legOffsetPositions[i];
+    legs[i]->_endPose = legDesiredPoses[i];
+  }
+
+  void updateLeg(int i){
+    legs[i]->_position = _position + _rotation.transformVector(legOffsetPositions[i]);
+    legs[i]->_rotation = _rotation;
+  }
+
+  void update(Float deltaTime) {
+    HandleAnimation(deltaTime);
+
+    // Update leg positions and rotations using arrays
+    for (int i = 0; i < numLegs; i++) {
+      updateLeg(i);
+      legs[i]->update(deltaTime);
+    }
+
+  }
+
+  void NewAnimation(Vector3 desiredPose, Quaternion desiredRotation){
+      _finalPose = desiredPose;
+      _startPose = _position;
+      _finalQuaternion = desiredRotation;
+      _startQuaternion = _rotation;
+
+      _animationPosePlaying = true;
+      _animationRotationPlaying = true;
+
+      rotationTime = 0;
+      vectorTime = 0;
+  }
+
+  // Function to calculate the raw difference between angles
+  double rawDifference(Rad angle1, Rad angle2) {
+    return fmod(float(angle1) - float(angle2), 2 * M_PI); // Normalize to range (-2*PI, 2*PI)
+  }
+
+  // Function to find the smallest positive difference between angles on a circle
+  double smallestPositiveDifference(Rad angle1, Rad angle2) {
+    double difference = rawDifference(angle1, angle2);
+    if (difference < 0) {
+      difference += 2 * M_PI;
+    }
+    return difference;
+  }
+
+  float rotationTime = 0;
+  float vectorTime = 0;
+
+  void HandleAnimation(Float deltaTime){
+    // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
+    // then the endpose has not reached the desiredpose yet
+    
+    if (_animationPosePlaying){
+        // (this->_finalAnimationPose - this->_previousEndPose).length() >= (this->_finalAnimationPose - this->_endPose).length()
+        if (vectorTime / _stepTime <= 1.3){
+        // if (Math::lerp(_finalAnimationPose, _previousEndPose, 0) >= Math::lerp(_finalAnimationPose, _endPose, 0)){
+            // update the endpose position so that it is always "infront" of the previouspose
+            vectorTime += deltaTime;
+            float phase = (vectorTime / _stepTime);
+            _position = Math::lerp(_startPose, _finalPose, phase);
+        }
+        if (vectorTime / _stepTime >= 1) {
+            _animationPosePlaying = false;
+        }
+    }
+        
+    if (_animationRotationPlaying){
+      Debug{} << "rotationTime " << rotationTime << "stepTime " << _stepTime;
+      if (rotationTime / _stepTime <= 1.3){
+        // update the endpose position so that it is always "infront" of the previouspose
+        rotationTime += deltaTime;
+        float phase = (rotationTime / _stepTime);
+        _rotation =  Math::lerpShortestPath(_startQuaternion, _finalQuaternion, phase);
+      }
+      if (rotationTime / _stepTime >= 1) {
+        _animationRotationPlaying = false;
+      }
+    }
+  }
+
+  Quaternion minusRotation(Quaternion input1, Quaternion input2){
+    Math::Vector3<Rad> eulerAngles1 = input1.normalized().toEuler();
+    Math::Vector3<Rad> eulerAngles2 = input2.normalized().toEuler();
+    Math::Vector3<Rad> eulerAnglesOutput = eulerAngles1 - eulerAngles2;
+
+    Quaternion a =
+      Quaternion::rotation(eulerAnglesOutput[2], Vector3::zAxis())*
+      Quaternion::rotation(eulerAnglesOutput[1], Vector3::yAxis())*
+      Quaternion::rotation(eulerAnglesOutput[0], Vector3::xAxis());
+
+    return a;
+  }
 
 
   // Constants for leg positions
@@ -53,90 +159,12 @@ public:
   bool _animationRotationPlaying = false;
   Float _stepTime = 0.3f;
   Vector3 _position;
-  Vector3 _previousPosition;
-  Quaternion _previousRotation;
 
-  Vector3 _travelVector;
-  Vector3 _finalAnimationPose;
-  Quaternion _finalAnimationRotation;
-  Vector3 _desiredPose;
-  Vector3 _deltaVector;
-  Quaternion _deltaQuaternion;
+  Vector3 _startPose;
+  Vector3 _finalPose;
 
-  // Constructor
-  Body() {
-    _position = Vector3(0.0f, 0.8f, 0.0f);
-
-    // Initialize legs using arrays
-    for (int i = 0; i < numLegs; i++) {
-      legs[i] = new Leg();
-      initLeg(i);
-    }
-  }
-
-  void initLeg(int i) {
-    legs[i]->_position = _position + legOffsetPositions[i];
-    legs[i]->_endPose = legDesiredPoses[i];
-  }
-
-  void updateLeg(int i){
-    legs[i]->_position = _position + _rotation.transformVector(legOffsetPositions[i]);
-    legs[i]->_rotation = _rotation;
-  }
-
-  void update(Float deltaTime) {
-    HandleAnimation(deltaTime);
-
-    // Update leg positions and rotations using arrays
-    for (int i = 0; i < numLegs; i++) {
-      updateLeg(i);
-      legs[i]->update(deltaTime);
-    }
-
-  }
-
-  void NewAnimation(Vector3 desiredPose, Quaternion desiredRotation, float speedConstant){
-      this->_finalAnimationPose = desiredPose;
-
-      // if ((this->_desiredPose - this->_endPose).length() < 0.2) return;
-
-      this->_deltaVector = this->_finalAnimationPose - this->_position;
-      // this->_deltaQuaternion = this->_finalAnimationRotation - this->_rotation;
-      
-      this->_previousPosition = this->_position;
-      // this->_previousRotation = this->_rotation;
-
-      this->_animationPlaying = true;
-  }
-
-  void HandleAnimation(Float deltaTime){
-      // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
-      // then the endpose has not reached the desiredpose yet
-      
-      if (_animationPlaying){
-          if ((this->_finalAnimationPose - this->_previousPosition).length() >= (this->_finalAnimationPose - this->_position).length()){
-              // reset the previous end pose to the current end pose
-              this->_previousPosition = this->_position;
-              // update the endpose position so that it is always "infront" of the previouspose
-              this->_position += this->_deltaVector * (deltaTime / this->_stepTime);
-          }
-          else {
-              this->_position = this->_finalAnimationPose;
-              this->_animationPlaying = false;
-          }
-
-      }
-      // else { Debug{} << "Animation not playing"; }
-  }
-
-  Quaternion changeRotation(Float x, Float y, Float z){
-    Quaternion combinedRotation;
-    combinedRotation = combinedRotation * Quaternion::rotation(Rad(x), Vector3::xAxis()); 
-    combinedRotation = combinedRotation * Quaternion::rotation(Rad(y), Vector3::yAxis()); 
-    combinedRotation = combinedRotation * Quaternion::rotation(Rad(z), Vector3::zAxis());
-
-    return combinedRotation;
-  }
+  Quaternion _finalQuaternion;
+  Quaternion _startQuaternion;
 };
 
 #endif

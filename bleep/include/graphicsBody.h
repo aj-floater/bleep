@@ -157,7 +157,13 @@ public:
             }
           }
 
-          this->NewAnimation(Vector3(deltaPosition.x() + phantomPosition.x()/2, _position.y(), deltaPosition.z() + phantomPosition.z()/2), deltaRotation, 5.0f);
+          Math::Vector3<Rad> eulerAngles = phantomRotation.normalized().toEuler();
+          eulerAngles[1] = eulerAngles[1] / 2;
+          Quaternion a =
+            Quaternion::rotation(eulerAngles[2], Vector3::zAxis())*
+            Quaternion::rotation(eulerAngles[1], Vector3::yAxis())*
+            Quaternion::rotation(eulerAngles[0], Vector3::xAxis());
+          this->NewAnimation(Vector3(deltaPosition.x() + phantomPosition.x()/2, _position.y(), deltaPosition.z() + phantomPosition.z()/2), deltaRotation);
 
           phase.second = ENGAGED;
         }
@@ -178,10 +184,9 @@ public:
             if (phase.second == ENGAGED){
               phase.second = SCHEDULED;
 
-              // _position = Vector3(deltaPosition.x(), _position.y(), deltaPosition.z());
+              // _position = Vector3(deltaPosition.x() + phantomPosition.x()/2, _position.y(), deltaPosition.z() + phantomPosition.z()/2);
               deltaPosition += phantomPosition;
 
-              _rotation = deltaRotation;
               deltaRotation = deltaRotation * phantomRotation;
 
               if (_gaitToggle==1) _gaitToggle = 2;
@@ -251,7 +256,6 @@ public:
 
       _rotation = combinedRotation;
     }
-    
 
     ImGui::SeparatorText("Control");
     if(ImGui::DragFloat("Step Time", &_stepTime, 0.01f)){
@@ -287,10 +291,18 @@ public:
 
     ImGui::Text("Gait Toggle: %i", _gaitToggle);
 
+    ImGui::SeparatorText("Leg Animation Status");
+    for (int i = 0; i < 6; i++){
+      ImGui::Text("Leg %i: %s", i, boolToString(legs[i]->_animationPlaying).c_str());
+    }
+
     // End the window
     ImGui::End();
   }
 
+  std::string boolToString(bool value) {
+      return value ? "true" : "false";
+  }
 
   void showGUI(){
     showBodyControl();

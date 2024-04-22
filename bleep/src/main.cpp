@@ -209,7 +209,7 @@ void MyApplication::renderGUI() {
 
     ImGui::DragFloat("StepTime", &debuggingLeg->_stepTime, 0.1f, 0.0f, 30.0f);
     if (ImGui::Button("Play")){
-      debuggingLeg->NewAnimation();
+      debuggingLeg->NewAnimation(Vector3(desiredpose[0], desiredpose[1], desiredpose[2]));
     };
 
     ImGui::End();

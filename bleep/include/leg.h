@@ -89,45 +89,33 @@ public:
         BaseJoint->_angle = - angle_1;
     }
 
-    void NewAnimation(){
-        // Check if the animation is actually necessary
-        if ((this->_desiredPose - this->_endPose).length() < 0.2) return;
-        // The animation is necessary
-        this->_finalAnimationPose = this->_desiredPose;
-        this->_deltaVector = this->_finalAnimationPose - this->_endPose;
-        
-        this->_previousEndPose = this->_endPose;
-        // this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
-
-        this->_animationPlaying = true;
-    }
     void NewAnimation(Vector3 desiredPose){
-        if ((desiredPose - this->_endPose).length() < 0.02) return;
-        
-        this->_finalAnimationPose = desiredPose;
+        _startPose = _endPose;
+        _finalAnimationPose = desiredPose;
 
-        this->_deltaVector = this->_finalAnimationPose - this->_endPose;
-        
-        this->_previousEndPose = this->_endPose;
-        // this->_speed = _deltaVector.lengthInverted() * this->_speedConstant;
+        _animationPlaying = true;
 
-        this->_animationPlaying = true;
+        vectorTime = 0;
     }
+
+    float vectorTime = 0;
 
     void HandleAnimation(Float deltaTime){
         // if the distance from the desiredpose to the previouspose is greater than the distance to the currentendpose
         // then the endpose has not reached the desiredpose yet
         
         if (_animationPlaying){
-            if ((this->_finalAnimationPose - this->_previousEndPose).length() >= (this->_finalAnimationPose - this->_endPose).length()){
-                // reset the previous end pose to the current end pose
-                this->_previousEndPose = this->_endPose;
+            // (this->_finalAnimationPose - this->_previousEndPose).length() >= (this->_finalAnimationPose - this->_endPose).length()
+            if (vectorTime / _stepTime <= 1.3){
+            // if (Math::lerp(_finalAnimationPose, _previousEndPose, 0) >= Math::lerp(_finalAnimationPose, _endPose, 0)){
                 // update the endpose position so that it is always "infront" of the previouspose
-                this->_endPose += this->_deltaVector * (deltaTime / this->_stepTime);
+                vectorTime += deltaTime;
+                float phase = (vectorTime / _stepTime);
+                _endPose = Math::lerp(_startPose, _finalAnimationPose, phase);
+            
             }
-            else {
-                this->_endPose = this->_finalAnimationPose;
-                this->_animationPlaying = false;
+            if (vectorTime / _stepTime >= 1){
+                _animationPlaying = false;
             }
         }
     }
@@ -142,7 +130,7 @@ public:
     bool _animationPlaying = false;
     Float _stepTime = 0.3f;
     Vector3 _endPose;
-    Vector3 _previousEndPose;
+    Vector3 _startPose;
 
     Vector3 _travelVector;
     Vector3 _finalAnimationPose;
