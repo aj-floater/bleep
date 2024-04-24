@@ -29,6 +29,9 @@ float _stepSize = 0.4f;
 
 #include "graphicsBody.h"
 
+#include "MacSerialPort/SerialPort/SerialPort.hpp"
+#include "MacSerialPort/TypeAbbreviations/TypeAbbreviations.hpp"
+
 using namespace Magnum;
 using namespace Math::Literals;
 
@@ -141,7 +144,7 @@ MyApplication::MyApplication(const Arguments& arguments):
 
   controller = new Controller();
 
-  debuggingLeg = new GraphicsLeg();
+  debuggingLeg = new GraphicsLeg(Vector3(0.75f));
   debuggingLeg->showDebuggingWindow = true;
   debuggingLeg->showMeshes = true;
   debuggingLeg->_position = Vector3(5.0f, 0.0f, 0.0f);
@@ -158,6 +161,42 @@ MyApplication::MyApplication(const Arguments& arguments):
 }
 
 bool showLegInfoWindow = false; // A flag to track whether to show the leg info window or not
+
+std::vector<std::string> ports;
+std::string selectedPort;
+int selectedBaudRate = 9600;
+
+// Define some constants
+constexpr size_t MAX_DATA_LENGTH = 256;
+
+// Variables to store user input and received data
+char sendBuffer[MAX_DATA_LENGTH] = "";
+char receiveBuffer[MAX_DATA_LENGTH] = "";
+
+bool sendSimData = false;
+
+// Function to send data over serial
+static void sendData() {
+    size_t length = strlen(sendBuffer);
+    ssize_t bytesSent = writeSerialData(sendBuffer, length);
+    if (bytesSent != static_cast<ssize_t>(length)) {
+        // Handle error
+    }
+}
+
+std::string out = "<0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0>";
+void updateStringFromValues(int values[]) {
+    out = "<";
+    for (int i = 0; i < 18; ++i) {
+        out += std::to_string(values[i]);
+        if (i < 17) {
+            out += ":";
+        }
+    }
+    out += ">\n";
+}
+
+int values[18];
 
 void MyApplication::renderGUI() {
   _imgui.newFrame();
@@ -218,6 +257,118 @@ void MyApplication::renderGUI() {
     ImGui::End();
   }
 
+  {
+    // Begin Serial Control
+    ImGui::Begin("Serial Control");
+
+    if (ImGui::Button("Refresh")) {
+      // Handle refresh button click action here
+      ports = parseSerialPorts(getSerialPorts());
+    }
+    // Dropdown menu for selecting baud rates
+    ImGui::SameLine(); // Ensure the dropdown is on the same line
+
+    const char* baudRates[] = { "9600", "19200", "38400", "57600", "115200" };
+    static int selectedBaudRateIndex = 0; // Index of the selected baud rate
+    if (ImGui::BeginCombo("##baudrate", baudRates[selectedBaudRateIndex])) // ## is an identifier with no label and no display
+    {
+        for (int i = 0; i < IM_ARRAYSIZE(baudRates); i++)
+        {
+            bool isSelected = (selectedBaudRateIndex == i);
+            if (ImGui::Selectable(baudRates[i], isSelected))
+            {
+                selectedBaudRateIndex = i;
+                selectedBaudRate = std::stoi(std::string(baudRates[i])); // Set the selected baud rate as a string
+            }
+
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    // Calculate the desired height for the port buttons section
+    const float maxHeight = ImGui::GetTextLineHeightWithSpacing() * 5;
+
+    ImGui::BeginChild("PortButtons", ImVec2(0, maxHeight), true);
+
+    static int selected = -1;
+    int n = 0;
+    for (const auto& port : ports) {
+      n++;
+      char buf[32];
+      sprintf(buf, port.c_str());
+      if (ImGui::Selectable(buf, selected == n)){
+        selected = n;
+        selectedPort = port;
+      }
+    }
+
+    ImGui::EndChild();
+
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::Button("Connect")) 
+    {
+        //* Open port, and connect to a device
+      std::string devicePathStr = "/dev/tty." + selectedPort;
+      const char* devicePath = devicePathStr.c_str();
+      const int baudRate = selectedBaudRate;
+      int sfd = openAndConfigureSerialPort(devicePath, baudRate);
+      if (sfd < 0) {
+      if (sfd == -1) {
+          printf("Unable to connect to serial port.\n");
+      }
+      else { //sfd == -2
+          printf("Error setting serial port attributes.\n");
+      }
+    }
+    }
+    // Right column: Text
+    ImGui::SameLine(); // Move to the next column
+    ImGui::Text("%s", selectedPort.c_str()); // Display your text here
+    ImGui::SameLine(); // Move to the next column
+    ImGui::Text("%i", selectedBaudRate); // Display your text here
+
+    ImGui::InputText("Input", sendBuffer, 256);
+
+    // Check if there's enough space to add a newline character
+    if (ImGui::Button("Send Input")) {
+      // Assuming sendBuffer is defined as const char[256]
+      // Copy contents of sendBuffer to modifiableBuffer
+      // Get the length of the current contents in modifiableBuffer
+      char modifiableBuffer[256]; // Create a modifiable buffer
+      strcpy(modifiableBuffer, sendBuffer);
+      size_t currentLength = strlen(modifiableBuffer);
+
+      if (currentLength < sizeof(modifiableBuffer) - 1) {
+          // Add the newline character
+          modifiableBuffer[currentLength] = '\n';
+          modifiableBuffer[currentLength + 1] = '\0'; // Null-terminate the string
+          Debug{} << modifiableBuffer; // Print or debug as needed
+          writeSerialData(modifiableBuffer, strlen(modifiableBuffer)); // Send the data
+      }
+      else {
+        Debug{} << "too big";
+      }
+    }
+
+    //
+    if(ImGui::RadioButton("Send Sim Data", sendSimData)){
+      sendSimData=!sendSimData;
+    }
+
+    ImGui::End();
+
+    ImGui::Begin("Number Input Fields");
+    for (int i = 0; i < 18; ++i) {
+        if (ImGui::DragInt((std::to_string(i)).c_str(), &values[i])){
+          updateStringFromValues(values);
+        }
+    }
+    ImGui::Text("String: %s", out.c_str());
+    ImGui::End();
+  }
 
   controller->showGUI();
 
@@ -241,21 +392,71 @@ void MyApplication::renderGUI() {
   GL::Renderer::disable(GL::Renderer::Feature::Blending);
 }
 
+static SDL_GameController *findController() {
+    for (int i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            return SDL_GameControllerOpen(i);
+        }
+    }
+
+    return nullptr;
+}
+
+SDL_GameController *ps3controller;
+
+double timeSinceLastSend;
+
 void MyApplication::drawEvent() {
   GL::defaultFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
 
   controller->update();
 
   // debuggingLeg->NewAnimation();
+  float deltaTime = _timeline.currentFrameDuration();
  
-  debuggingLeg->update(_timeline.currentFrameDuration());
+  debuggingLeg->update(deltaTime);
 
-  body->update(_timeline.currentFrameDuration());
+  body->update(deltaTime);
 
   _arcballCamera->update();
     _arcballCamera->draw(_drawables);
 
   renderGUI();
+
+  ps3controller = findController();
+
+  if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP)) {
+    if (body->_position.y() < 1.5f){
+      body->_position += Vector3(0, deltaTime * 2.0f, 0);
+    }
+  }
+  if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN)) {
+    if (body->_position.y() > 0.25f){
+      body->_position -= Vector3(0, deltaTime * 2.0f, 0);
+    }
+  }
+
+  body->getAllJointAngles();
+  // std::string out = body->intArrayToString(body->jointAngles, 18);
+
+  updateStringFromValues(values);
+  // Debug{} << out.c_str();
+
+  // Debug{} << deltaTime;
+  if (sendSimData){
+    if (timeSinceLastSend >= 0.05){
+      // writeSerialData(out.c_str(), strlen(out.c_str()));
+      Debug{} << out.c_str();
+      writeSerialData(out.c_str(), strlen(out.c_str()));
+      
+      timeSinceLastSend = 0;
+    }
+    else {
+      timeSinceLastSend += deltaTime;
+    }
+    // std::string height = std::to_string(body->_position.y()) + "\n";
+    // writeSerialData(height.c_str(), strlen(height.c_str()));
+  }
 
   swapBuffers();
   redraw();
@@ -305,49 +506,64 @@ void MyApplication::keyPressEvent(KeyEvent& event) {
     }
 }
 
+float value;
+
 void MyApplication::anyEvent(SDL_Event& event) {
+  // Debug{} << event.type;
   switch(event.type)
   {  
+    case SDL_CONTROLLERDEVICEADDED:
+      if (!ps3controller) {
+          ps3controller = SDL_GameControllerOpen(event.cdevice.which);
+      }
+      break;
+    case SDL_CONTROLLERDEVICEREMOVED:
+      if (ps3controller && event.cdevice.which == SDL_JoystickInstanceID(
+              SDL_GameControllerGetJoystick(ps3controller))) {
+          SDL_GameControllerClose(ps3controller);
+          ps3controller = findController();
+      }
+      break;
     case SDL_JOYAXISMOTION:  /* Handle Joystick Motion */
-      if( event.jaxis.axis == 0) 
-      {
-        float value = event.jaxis.value;
-        controller->leftJoystick.x() = value / 32767.0f;
-        // Debug{} << value / 32767.0f;
-        // Debug{} << "/* Left-right movement code goes here */";
+      value = event.jaxis.value;
+      switch (event.jaxis.axis){
+        case SDL_CONTROLLER_AXIS_LEFTX:
+          controller->leftJoystick.x() = value / 32767.0f;
+          break;
+        case SDL_CONTROLLER_AXIS_LEFTY:
+          controller->leftJoystick.y() = value / 32767.0f;
+          break;
+        case SDL_CONTROLLER_AXIS_RIGHTX:
+          controller->rightJoystick.x() = value / 32767.0f;
+          break;
+        case SDL_CONTROLLER_AXIS_RIGHTY:
+          controller->rightJoystick.y() = value / 32767.0f;
+          break;
+        case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+          _stepTime = 0.275f - (value / 32767.0f + 1) * 0.0875f;
+          break;
+        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+          _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
+          break;
       }
-      if( event.jaxis.axis == 1) 
-      {
-        float value = event.jaxis.value;
-        controller->leftJoystick.y() = value / 32767.0f;
-        // Debug{} << value / 32767.0f;
-        // Debug{} << "/* Up-Down movement code goes here */";
+      break;
+    case 1540:
+      switch (event.cbutton.button) {
+      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
+          // std::cerr << "X pressed!" << std::endl;
+          body->mode = WALKING;
+          break;
+      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+          // std::cerr << "B pressed!" << std::endl;
+          body->mode = STANDING;
+          body->defaultPosition = body->_position;
+          body->defaultRotation = body->_rotation;
+          break;
       }
-      if( event.jaxis.axis == 2) 
-      {
-        float value = event.jaxis.value;
-        controller->rightJoystick.x() = value / 32767.0f;
-        // Debug{} << value / 32767.0f;
-        // Debug{} << "/* Left-right movement code goes here */";
-      }
-      if( event.jaxis.axis == 3) 
-      {
-        float value = event.jaxis.value;
-        controller->rightJoystick.y() = value / 32767.0f;
-        // Debug{} << value / 32767.0f;
-        // Debug{} << "/* Up-Down movement code goes here */";
-      }
-      if( event.jaxis.axis == 4) 
-      {
-        float value = event.jaxis.value;
-        _stepTime = 0.275f - (value / 32767.0f + 1) * 0.0875f;
-      }
-      if( event.jaxis.axis == 5) 
-      {
-        float value = event.jaxis.value;
-        _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
-      }
-    break;
+      break;
+    // default:
+    //   Debug{} << event.type;
+    //   break;
   }
 }
 

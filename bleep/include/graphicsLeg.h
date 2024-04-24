@@ -10,12 +10,12 @@
 
 class GraphicsLeg : public Leg {
 public:
-    GraphicsLeg(){
+    GraphicsLeg(Vector3 inputColor){
         // Initialize features of base joint
         // Initialize features of second joint
         // Initialize features of third joint
 
-        _color = Vector3(0.75f);
+        _color = inputColor;
 
         EndEffector = new GraphicsJoint(Color3(0.9f, 0.0f, 0.0f), 10.1f, Vector3::yAxis(), 1.0f);
 

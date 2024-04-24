@@ -20,6 +20,7 @@ add_executable(bleep
 
 ArcBall.cpp
 main.cpp
+../include/MacSerialPort/SerialPort/SerialPort.cpp
     )
 
 
