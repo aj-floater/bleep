@@ -9,12 +9,18 @@
 #include <sstream>
 #include <cmath>
 
+#include <sstream>
+#include <iomanip>
+
 #include "leg.h"
 
 #include "controller.h"
 
 using namespace Magnum;
 using namespace Math::Literals;
+
+#define WALKING 0
+#define STANDING 1
 
 class Body {
 public:
@@ -127,24 +133,29 @@ public:
 
   // Constants for leg positions
   static constexpr int numLegs = 6;
+  float x = 0.60f;
+  float z = 0.86f;
   Vector3 legOffsetPositions[numLegs] = {
-    Vector3(0.60f, 0.0f, 0.86f),
-    Vector3(0.60f, 0.0f, 0.0f),
-    Vector3(0.60f, 0.0f, -0.86f),
-    Vector3(-0.60f, 0.0f, 0.86f),
-    Vector3(-0.60f, 0.0f, 0.0f),
-    Vector3(-0.60f, 0.0f, -0.86f)
+    Vector3(x, 0.0f, z),
+    Vector3(x, 0.0f, 0.0f),
+    Vector3(x, 0.0f, -z),
+    Vector3(-x, 0.0f, z),
+    Vector3(-x, 0.0f, 0.0f),
+    Vector3(-x, 0.0f, -z)
   };
 
   // Constants for leg desired end effector poses
+  float desiredX = 1.4f;
+  float desiredZ = 1.6f;
   Vector3 legDesiredPoses[numLegs] = {
-    Vector3(1.5f, 0.0f, 1.8f),
-    Vector3(2.0f, 0.0f, 0.001f),
-    Vector3(1.5f, 0.0f, -1.8f),
-    Vector3(-1.5f, 0.0f, 1.8f),
-    Vector3(-2.0f, 0.0f, 0.001f),
-    Vector3(-1.5f, 0.0f, -1.8f)
+    Vector3(desiredX, 0.0f, desiredZ),
+    Vector3(desiredX * 1.333, 0.0f, 0.001f),
+    Vector3(desiredX, 0.0f, -desiredZ),
+    Vector3(-desiredX, 0.0f, desiredZ),
+    Vector3(-desiredX * 1.333, 0.0f, 0.001f),
+    Vector3(-desiredX, 0.0f, -desiredZ)
   };
+
 
   // Array to hold leg instances
   Leg* legs[numLegs];
@@ -171,6 +182,8 @@ public:
 
   Quaternion _finalQuaternion;
   Quaternion _startQuaternion;
+
+  int mode = STANDING;
 };
 
 #endif

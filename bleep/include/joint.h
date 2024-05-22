@@ -51,7 +51,7 @@ public:
     Quaternion _rotation;
 
     Vector3 _axisofrotation;
-    Float _angle = 0.0f;
+    Float _angle;
 
     Float _length = 1.0f;
     Joint* _child;
