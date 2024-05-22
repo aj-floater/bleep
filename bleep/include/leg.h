@@ -112,19 +112,19 @@ public:
                 vectorTime += deltaTime;
                 float phase = (vectorTime / _stepTime);
                 // Adding step height
-                Vector3 stepHeight;
+                Vector3 endPoseHeight;
                 if (phase < 0.5){
                     float easeOutPhase = - 4*powf(phase,2) + 4*phase;
-                    stepHeight = Math::lerp(Vector3(0), Vector3(0, 0.2f, 0), Math::clamp(easeOutPhase, 0.0f, 1.0f));
+                    endPoseHeight = Math::lerp(Vector3(0), Vector3(0, _stepHeight, 0), Math::clamp(easeOutPhase, 0.0f, 1.0f));
                 }
                 else if (phase > 0.5){
                     float easeOutPhase = - 4*powf(phase,2) + 4*phase;
-                    stepHeight = Math::lerp(Vector3(0, 0.2f, 0), Vector3(0), Math::clamp(1-easeOutPhase, 0.0f, 1.0f));
+                    endPoseHeight = Math::lerp(Vector3(0, _stepHeight, 0), Vector3(0), Math::clamp(1-easeOutPhase, 0.0f, 1.0f));
                 }
-                else stepHeight = Vector3(0.0f);
+                else endPoseHeight = Vector3(0.0f);
 
                 // Finalise endposition
-                _endPose = Math::lerp(_startPose, _finalAnimationPose, phase) + stepHeight;
+                _endPose = Math::lerp(_startPose, _finalAnimationPose, phase) + endPoseHeight;
             }
             if (vectorTime / _stepTime >= 1){
                 _animationPlaying = false;

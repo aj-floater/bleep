@@ -76,29 +76,34 @@ public:
   void getAllJointAngles() {
     // Create a dynamically allocated array to store the joint angles
 
-    jointAngles[0] = round(legs[5]->BaseJoint->_angle * (180.0 / M_PI));
-    jointAngles[1] = round(legs[5]->SecondJoint->_angle * (180.0 / M_PI));
-    jointAngles[2] = round(legs[5]->ThirdJoint->_angle * (180.0 / M_PI));
+    jointAngles[0] = -1 * round(legs[2]->BaseJoint->_angle * (180.0 / M_PI));
+    jointAngles[1] = round(legs[2]->SecondJoint->_angle * (180.0 / M_PI));
+    jointAngles[2] = round(legs[2]->ThirdJoint->_angle * (180.0 / M_PI));
 
-    jointAngles[3] = round(legs[4]->BaseJoint->_angle * (180.0 / M_PI));
-    jointAngles[4] = round(legs[4]->SecondJoint->_angle * (180.0 / M_PI));
-    jointAngles[5] = round(legs[4]->ThirdJoint->_angle * (180.0 / M_PI));
+    jointAngles[3] = -1 * round(legs[1]->BaseJoint->_angle * (180.0 / M_PI));
+    jointAngles[4] = round(legs[1]->SecondJoint->_angle * (180.0 / M_PI));
+    jointAngles[5] = round(legs[1]->ThirdJoint->_angle * (180.0 / M_PI));
 
-    jointAngles[6] = round(legs[3]->BaseJoint->_angle * (180.0 / M_PI));
-    jointAngles[7] = round(legs[3]->SecondJoint->_angle * (180.0 / M_PI));
-    jointAngles[8] = round(legs[3]->ThirdJoint->_angle * (180.0 / M_PI));
+    jointAngles[6] = -1 * round(legs[0]->BaseJoint->_angle * (180.0 / M_PI));
+    jointAngles[7] = round(legs[0]->SecondJoint->_angle * (180.0 / M_PI));
+    jointAngles[8] = round(legs[0]->ThirdJoint->_angle * (180.0 / M_PI));
 
-    jointAngles[9] = round(legs[2]->BaseJoint->_angle * (180.0 / M_PI));
-    jointAngles[10] = round(legs[2]->SecondJoint->_angle * (180.0 / M_PI));
-    jointAngles[11] = round(legs[2]->ThirdJoint->_angle * (180.0 / M_PI));
+    jointAngles[9] =  180 - round(legs[5]->BaseJoint->_angle * (180.0 / M_PI));
+    jointAngles[10] = round(legs[5]->SecondJoint->_angle * (180.0 / M_PI));
+    jointAngles[11] = round(legs[5]->ThirdJoint->_angle * (180.0 / M_PI));
 
-    jointAngles[12] = round(legs[1]->BaseJoint->_angle * (180.0 / M_PI));
-    jointAngles[13] = round(legs[1]->SecondJoint->_angle * (180.0 / M_PI));
-    jointAngles[14] = round(legs[1]->ThirdJoint->_angle * (180.0 / M_PI));
+    jointAngles[12] = round(legs[4]->BaseJoint->_angle * (180.0 / M_PI));
+    if (jointAngles[12] > 0)
+      jointAngles[12] = 180 - jointAngles[12];
+    else if (jointAngles[12] < 0)
+      jointAngles[12] = -180 - jointAngles[12];
+    
+    jointAngles[13] = round(legs[4]->SecondJoint->_angle * (180.0 / M_PI));
+    jointAngles[14] = round(legs[4]->ThirdJoint->_angle * (180.0 / M_PI));
 
-    jointAngles[15] = round(legs[0]->BaseJoint->_angle * (180.0 / M_PI));
-    jointAngles[16] = round(legs[0]->SecondJoint->_angle * (180.0 / M_PI));
-    jointAngles[17] = round(legs[0]->ThirdJoint->_angle * (180.0 / M_PI));
+    jointAngles[15] = -180 - round(legs[3]->BaseJoint->_angle * (180.0 / M_PI));
+    jointAngles[16] = round(legs[3]->SecondJoint->_angle * (180.0 / M_PI));
+    jointAngles[17] = round(legs[3]->ThirdJoint->_angle * (180.0 / M_PI));
 
     // Debug{} << legs[0]->BaseJoint->_angle;
   }
@@ -396,6 +401,9 @@ public:
     ImGui::DragFloat("Step Time", &_stepTime, 0.01f);
 
     ImGui::DragFloat("Step Size", &_stepSize, 0.01f);
+
+    ImGui::DragFloat("Step Height", &_stepHeight, 0.001f);
+
 
     if (ImGui::DragFloat("Desired X", &desiredX, 0.001f) || ImGui::DragFloat("Desired Z", &desiredZ, 0.001f)){
       legDesiredPoses[0] = Vector3(desiredX, 0.0f, desiredZ);

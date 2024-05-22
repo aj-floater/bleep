@@ -26,6 +26,7 @@
 
 float _stepTime = 0.3f;
 float _stepSize = 0.4f;
+float _stepHeight = 0.3f;
 
 #include "graphicsBody.h"
 
@@ -117,6 +118,9 @@ MyApplication::MyApplication(const Arguments& arguments):
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
 
+  ImGuiIO &io = ImGui::GetIO();
+  io.IniFilename = "/Users/archiejames/coding/bleep-prime/imgui.ini";
+
   GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
   GL::Renderer::setBlendEquation(GL::Renderer::BlendEquation::Add,
     GL::Renderer::BlendEquation::Add);
@@ -197,6 +201,9 @@ void updateStringFromValues(int values[]) {
 }
 
 int values[18];
+
+std::string receivedData;
+bool serialConnected = false;
 
 void MyApplication::renderGUI() {
   _imgui.newFrame();
@@ -316,13 +323,17 @@ void MyApplication::renderGUI() {
       const int baudRate = selectedBaudRate;
       int sfd = openAndConfigureSerialPort(devicePath, baudRate);
       if (sfd < 0) {
-      if (sfd == -1) {
-          printf("Unable to connect to serial port.\n");
+        if (sfd == -1) {
+            printf("Unable to connect to serial port.\n");
+        }
+        else { //sfd == -2
+            printf("Error setting serial port attributes.\n");
+        }
+        serialConnected = false;
       }
-      else { //sfd == -2
-          printf("Error setting serial port attributes.\n");
+      else {
+        serialConnected = true;
       }
-    }
     }
     // Right column: Text
     ImGui::SameLine(); // Move to the next column
@@ -330,10 +341,14 @@ void MyApplication::renderGUI() {
     ImGui::SameLine(); // Move to the next column
     ImGui::Text("%i", selectedBaudRate); // Display your text here
 
-    ImGui::InputText("Input", sendBuffer, 256);
+    ImGui::BeginChild("ScrollingRegion", ImVec2(0, 100), true, ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    ImGui::Text("%s", receivedData.c_str());
+    ImGui::EndChild();
 
+    ImGui::InputText("##Input", sendBuffer, 256);
+    ImGui::SameLine();
     // Check if there's enough space to add a newline character
-    if (ImGui::Button("Send Input")) {
+    if (ImGui::Button(">>")) {
       // Assuming sendBuffer is defined as const char[256]
       // Copy contents of sendBuffer to modifiableBuffer
       // Get the length of the current contents in modifiableBuffer
@@ -437,25 +452,42 @@ void MyApplication::drawEvent() {
   }
 
   body->getAllJointAngles();
-  // std::string out = body->intArrayToString(body->jointAngles, 18);
+  out = body->intArrayToString(body->jointAngles, 18);
 
-  updateStringFromValues(values);
+  // updateStringFromValues(values);
   // Debug{} << out.c_str();
 
   // Debug{} << deltaTime;
-  if (sendSimData){
-    if (timeSinceLastSend >= 0.05){
-      // writeSerialData(out.c_str(), strlen(out.c_str()));
-      Debug{} << out.c_str();
-      writeSerialData(out.c_str(), strlen(out.c_str()));
-      
-      timeSinceLastSend = 0;
+  if (serialConnected){
+    if (sendSimData){
+      if (timeSinceLastSend >= 0.05){
+        // writeSerialData(out.c_str(), strlen(out.c_str()));
+        // Debug{} << out.c_str();
+        writeSerialData(out.c_str(), strlen(out.c_str()));
+        
+        timeSinceLastSend = 0;
+      }
+      else {
+        timeSinceLastSend += deltaTime;
+      }
+      // std::string height = std::to_string(body->_position.y()) + "\n";
+      // writeSerialData(height.c_str(), strlen(height.c_str()));
     }
-    else {
-      timeSinceLastSend += deltaTime;
+
+    char readBuffer[256]; // Create a modifiable buffer
+    if (readSerialData(readBuffer, 256) != -1){
+      // Find the position of newline terminator in readBuffer
+      char* nlTerminatorPos = strchr(readBuffer, '\n');
+      if (nlTerminatorPos != nullptr) {
+          // Calculate the length of characters up to newline terminator
+          // size_t charsToAdd = nlTerminatorPos - readBuffer + 1; // Add 1 to include newline character
+
+          // Append characters up to newline terminator to receivedDat
+          // receivedData.append(readBuffer, charsToAdd);
+          receivedData += readBuffer;
+          // Debug{} << receivedData;
+      }
     }
-    // std::string height = std::to_string(body->_position.y()) + "\n";
-    // writeSerialData(height.c_str(), strlen(height.c_str()));
   }
 
   swapBuffers();
@@ -540,7 +572,7 @@ void MyApplication::anyEvent(SDL_Event& event) {
           controller->rightJoystick.y() = value / 32767.0f;
           break;
         case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-          _stepTime = 0.275f - (value / 32767.0f + 1) * 0.0875f;
+          _stepTime = 0.5f - (value / 32767.0f + 1) * 0.1;
           break;
         case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
           _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
