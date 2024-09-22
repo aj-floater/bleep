@@ -505,37 +505,40 @@ void MyApplication::viewportEvent(ViewportEvent& event) {
 }
 
 void MyApplication::keyPressEvent(KeyEvent& event) {
-    if (_imgui.handleKeyPressEvent(event))
-        return;
+    // if (_imgui.handleKeyPressEvent(event))
+    //     return;
 
-    switch (event.key()) {
-        case KeyEvent::Key::W:
-            controller->leftMovement.y() = -1.0f;
-            break;
-        case KeyEvent::Key::S:
-            controller->leftMovement.y() = 1.0f;
-            break;
-        case KeyEvent::Key::A:
-            controller->leftMovement.x() = -1.0f;
-            break;
-        case KeyEvent::Key::D:
-            controller->leftMovement.x() = 1.0f;
-            break;
-        case KeyEvent::Key::Up:
-            controller->rightMovement.y() = -1.0f;
-            break;
-        case KeyEvent::Key::Down:
-            controller->rightMovement.y() = 1.0f;
-            break;
-        case KeyEvent::Key::Left:
-            controller->rightMovement.x() = -1.0f;
-            break;
-        case KeyEvent::Key::Right:
-            controller->rightMovement.x() = 1.0f;
-            break;
-        default:
-            break;
-    }
+    if(event.key() == KeyEvent::Key::Down)
+      Debug{} << "Down";
+
+    // switch (event.key()) {
+    //     case KeyEvent::Key::W:
+    //         controller->leftMovement.y() = -1.0f;
+    //         break;
+    //     case KeyEvent::Key::S:
+    //         controller->leftMovement.y() = 1.0f;
+    //         break;
+    //     case KeyEvent::Key::A:
+    //         controller->leftMovement.x() = -1.0f;
+    //         break;
+    //     case KeyEvent::Key::D:
+    //         controller->leftMovement.x() = 1.0f;
+    //         break;
+    //     case KeyEvent::Key::Up:
+    //         controller->rightMovement.y() = -1.0f;
+    //         break;
+    //     case KeyEvent::Key::Down:
+    //         controller->rightMovement.y() = 1.0f;
+    //         break;
+    //     case KeyEvent::Key::Left:
+    //         controller->rightMovement.x() = -1.0f;
+    //         break;
+    //     case KeyEvent::Key::Right:
+    //         controller->rightMovement.x() = 1.0f;
+    //         break;
+    //     default:
+    //         break;
+    // }
 }
 
 float value;
@@ -602,27 +605,36 @@ void MyApplication::anyEvent(SDL_Event& event) {
 void MyApplication::keyReleaseEvent(KeyEvent& event) {
     if (_imgui.handleKeyReleaseEvent(event))
         return;
+    
+    // if(event.key() == KeyEvent::Key::A)
+    //   // controller->leftMovement.y() = 1.0f;
+    //   Debug{} << "A";
 
-    switch (event.key()) {
-        case KeyEvent::Key::W:
-        case KeyEvent::Key::S:
-            controller->leftMovement.y() = 0.0f;
-            break;
-        case KeyEvent::Key::A:
-        case KeyEvent::Key::D:
-            controller->leftMovement.x() = 0.0f;
-            break;
-        case KeyEvent::Key::Up:
-        case KeyEvent::Key::Down:
-            controller->rightMovement.y() = 0.0f;
-            break;
-        case KeyEvent::Key::Left:
-        case KeyEvent::Key::Right:
-            controller->rightMovement.x() = 0.0f;
-            break;
-        default:
-            break;
-    }
+    // switch (event.key()) {
+    //     case KeyEvent::Key::W:
+
+    //         controller->leftMovement.y() = 1.0f;
+    //         break;
+    //     case KeyEvent::Key::A:
+    //         controller->leftMovement.x() = -1.0f;
+    //         break;
+    //     case KeyEvent::Key::S:
+    //         controller->leftMovement.y() = -1.0f;
+    //         break;
+    //     case KeyEvent::Key::D:
+    //         controller->leftMovement.x() = 1.0f;
+    //         break;
+    //     case KeyEvent::Key::Up:
+    //     // case KeyEvent::Key::Down:
+    //     //     controller->rightMovement.y() = 1.0f;
+    //     //     break;
+    //     // case KeyEvent::Key::Left:
+    //     // case KeyEvent::Key::Right:
+    //     //     controller->rightMovement.x() = 1.0f;
+    //     //     break;
+    //     default:
+    //         break;
+    // }
 }
 
 void MyApplication::mousePressEvent(MouseEvent& event) {
