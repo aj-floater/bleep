@@ -30,8 +30,10 @@ float _stepHeight = 0.3f;
 
 #include "graphicsBody.h"
 
+#ifdef SerialPort
 #include "MacSerialPort/SerialPort/SerialPort.hpp"
 #include "MacSerialPort/TypeAbbreviations/TypeAbbreviations.hpp"
+#endif
 
 using namespace Magnum;
 using namespace Math::Literals;
@@ -116,6 +118,8 @@ MyApplication::MyApplication(const Arguments& arguments):
   #if __APPLE__
   init_gamepad();
   #endif
+  Debug{} << "Hello World";
+
   controller->init();
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
@@ -181,6 +185,7 @@ char receiveBuffer[MAX_DATA_LENGTH] = "";
 
 bool sendSimData = false;
 
+#ifdef SerialPort
 // Function to send data over serial
 static void sendData() {
     size_t length = strlen(sendBuffer);
@@ -189,6 +194,7 @@ static void sendData() {
         // Handle error
     }
 }
+#endif
 
 std::string out = "<0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0>";
 void updateStringFromValues(int values[]) {
@@ -266,6 +272,7 @@ void MyApplication::renderGUI() {
     ImGui::End();
   }
 
+  #ifdef SerialPort
   {
     // Begin Serial Control
     ImGui::Begin("Serial Control");
@@ -386,6 +393,7 @@ void MyApplication::renderGUI() {
     ImGui::Text("String: %s", out.c_str());
     ImGui::End();
   }
+  #endif
 
   controller->showGUI();
 
@@ -460,6 +468,7 @@ void MyApplication::drawEvent() {
   // Debug{} << out.c_str();
 
   // Debug{} << deltaTime;
+  #ifdef SerialPort
   if (serialConnected){
     if (sendSimData){
       if (timeSinceLastSend >= 0.05){
@@ -491,6 +500,7 @@ void MyApplication::drawEvent() {
       }
     }
   }
+  #endif
 
   swapBuffers();
   redraw();
