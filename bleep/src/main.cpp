@@ -113,7 +113,9 @@ MyApplication::MyApplication(const Arguments& arguments):
     .setWindowFlags(Configuration::WindowFlag::Resizable)}
 {
   using namespace Math::Literals;
+  #if __APPLE__
   init_gamepad();
+  #endif
   controller->init();
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());

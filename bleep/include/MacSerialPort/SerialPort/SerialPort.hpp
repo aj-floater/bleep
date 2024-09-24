@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <iostream>
 #include <array>
+#include <vector>
 
 
 int openAndConfigureSerialPort(const char* portPath, int baudRate);

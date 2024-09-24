@@ -175,7 +175,9 @@ public:
     ImGui::InvisibleButton("Spacer", ImVec2(1.0f, 100.0f)); // Creates 50px horizontal and 20px vertical space
 
     if (ImGui::Button("Search...")){
+      #if __APPLE__
       init_gamepad();
+      #endif
     };
 
     ImGui::End();

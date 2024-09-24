@@ -45,18 +45,18 @@ if(APPLE)
         Magnum::Trade
         MagnumIntegration::ImGui
         )
-elseif()
+else()
     target_link_libraries(bleep PRIVATE 
-    Corrade::Main
-    Magnum::Application
-    Magnum::GL
-    Magnum::Magnum
-    Magnum::MeshTools
-    Magnum::Primitives
-    Magnum::SceneGraph
-    Magnum::Shaders
-    Magnum::Trade
-    MagnumIntegration::ImGui
+        Corrade::Main
+        Magnum::Application
+        Magnum::GL
+        Magnum::Magnum
+        Magnum::MeshTools
+        Magnum::Primitives
+        Magnum::SceneGraph
+        Magnum::Shaders
+        Magnum::Trade
+        MagnumIntegration::ImGui
     )
 endif()
 
