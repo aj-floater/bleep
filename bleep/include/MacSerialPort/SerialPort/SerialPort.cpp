@@ -1,3 +1,4 @@
+#ifdef SerialPort
 //SerialPort.cpp
 
 #include "SerialPort.hpp"
@@ -217,3 +218,4 @@ std::vector<std::string> parseSerialPorts(const std::string& output) {
 
     return result;
 }
+#endif

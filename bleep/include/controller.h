@@ -190,9 +190,9 @@ public:
     // remember to add SDL_INIT_JOYSTICK to SDL_Init() in magnum
     printf("%i joysticks were found.\n\n", SDL_NumJoysticks() );
 
-    SDL_JoystickEventState(SDL_ENABLE);
-    joystick0 = SDL_JoystickOpen(0);
-    joystick1 = SDL_JoystickOpen(1);
+    // SDL_JoystickEventState(SDL_ENABLE);
+    // joystick0 = SDL_JoystickOpen(0);
+    // joystick1 = SDL_JoystickOpen(1);
   }
 
   void update(){

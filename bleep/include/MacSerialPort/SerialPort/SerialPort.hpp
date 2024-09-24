@@ -1,4 +1,5 @@
 //SerialPort.hpp
+#ifdef SerialPort
 
 #ifndef __SERIAL_PORT_HPP__
 #define __SERIAL_PORT_HPP__
@@ -45,3 +46,5 @@ std::string getSerialPorts();
 std::vector<std::string> parseSerialPorts(const std::string& output);
 
 #endif //__SERIAL_PORT_HPP__
+
+#endif

@@ -118,9 +118,9 @@ MyApplication::MyApplication(const Arguments& arguments):
   #if __APPLE__
   init_gamepad();
   #endif
-  Debug{} << "Hello World";
 
   controller->init();
+  printf("Hello World\n");
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
 
@@ -168,6 +168,7 @@ MyApplication::MyApplication(const Arguments& arguments):
   setMinimalLoopPeriod(16);
 
   _timeline.start();
+
 }
 
 bool showLegInfoWindow = false; // A flag to track whether to show the leg info window or not
