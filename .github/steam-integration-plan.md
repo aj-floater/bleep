@@ -5,9 +5,24 @@
   - Define optional build/runtime flags for Steamworks, detect presence without breaking current builds.
   - Add placeholder module(s) responsible for wrapping Steam API entry points (Input + Cloud) while remaining dormant when Steam isn’t available.
   - Done: Added `BLEEP_WITH_STEAM` CMake option, wired compile definition, and created placeholder `steamIntegration` module (header + source) that currently only tracks runtime availability.
-- [ ] Implement Steam Input manager
+- [x] Fix Steam SDK include path detection
+  - Plan for this step:
+    - Adjust CMake includes so `<steam/steam_api.h>` resolves by pointing at the SDK `public` directory instead of `public/steam`.
+    - Keep detection guarded by `BLEEP_WITH_STEAM` and ensure a missing SDK still shows the warning.
+  - Done: Updated the Steamworks include directory to `${STEAMWORKS_SDK_DIR}/public`, which exposes the `steam/` subfolder expected by the headers while keeping the optional guard logic.
+- [x] Implement Steam Input manager
+  - Plan for this step:
+    - Detect Steamworks SDK location and add include/link wiring guarded by `BLEEP_WITH_STEAM`.
+    - Extend `SteamIntegration` to initialize Steam API/Input (placeholder stubs if full code not ready) and expose a struct for stick/button state.
+    - Add basic update/poll method that keeps working when Steam isn’t available.
   - Initialize Steam Input after Steam API init, expose normalized stick/button state.
   - Ensure it handles absence of Steam (no-op) and AppID 480 is used.
+  - Done: Added SDK include/link wiring under `BLEEP_WITH_STEAM`, expanded `SteamIntegration` with init/shutdown/update paths that wrap SteamAPI/SteamInput (guarded) and exposed a `SteamInputState` struct to hold controller data even when Steam isn’t available.
+- [x] Ensure Steam runtime libraries are deployed alongside CLI binary
+  - Plan for this step:
+    - For macOS builds with `BLEEP_WITH_STEAM=ON`, copy `libsteam_api.dylib` next to the `bleep` executable during build (similar to models copy step).
+    - Ensure the copy only runs when the source dylib exists and keep other platforms untouched for now.
+  - Done: Added a post-build copy step on macOS that places `libsteam_api.dylib` beside the CLI executable whenever Steam support and the SDK dylib are available.
 - [ ] Feed Steam Input into `Controller`
   - Update the controller update path to consume Steam Input data when available, fall back to SDL otherwise.
   - Reflect Steam Input status in the ImGui controller UI for debugging.
