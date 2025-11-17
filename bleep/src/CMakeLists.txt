@@ -27,6 +27,8 @@ steamIntegration.cpp
 if(BLEEP_WITH_STEAM)
     set(STEAMWORKS_SDK_DIR "${PROJECT_SOURCE_DIR}/steam-sdk" CACHE PATH "Path to the Steamworks SDK root")
     target_include_directories(bleep PRIVATE "${STEAMWORKS_SDK_DIR}/public")
+    set(STEAM_ACTION_MANIFEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/steam_input/steam_input_manifest.vdf")
+    target_compile_definitions(bleep PRIVATE STEAM_ACTION_MANIFEST=\"${STEAM_ACTION_MANIFEST_PATH}\")
 
     if(APPLE)
         set(STEAMWORKS_LIB "${STEAMWORKS_SDK_DIR}/redistributable_bin/osx/libsteam_api.dylib")

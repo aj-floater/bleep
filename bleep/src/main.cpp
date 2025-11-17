@@ -33,6 +33,9 @@ float _stepHeight = 0.3f;
 #include "MacSerialPort/SerialPort/SerialPort.hpp"
 #include "MacSerialPort/TypeAbbreviations/TypeAbbreviations.hpp"
 
+#include "steamIntegration.h"
+#include <memory>
+
 using namespace Magnum;
 using namespace Math::Literals;
 
@@ -75,6 +78,7 @@ bool playing = false;
 class MyApplication: public Platform::Application {
 public:
   explicit MyApplication(const Arguments& arguments);
+  ~MyApplication();
 
   void viewportEvent(ViewportEvent& event) override;
 
@@ -105,6 +109,7 @@ private:
   GraphicsBody* body;
   Cube* cube;
   Controller* controller;
+  std::unique_ptr<SteamIntegration> _steamIntegration;
 };
 
 MyApplication::MyApplication(const Arguments& arguments):
@@ -113,8 +118,11 @@ MyApplication::MyApplication(const Arguments& arguments):
     .setWindowFlags(Configuration::WindowFlag::Resizable)}
 {
   using namespace Math::Literals;
+  controller = new Controller();
   init_gamepad();
   controller->init();
+  _steamIntegration.reset(new SteamIntegration());
+  _steamIntegration->initialize();
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
 
@@ -146,8 +154,6 @@ MyApplication::MyApplication(const Arguments& arguments):
     .scale(Vector3(20.0f));
   new GridDrawable{*grid, &_drawables, 40, Color3(0.3f, 0.3f, 0.3f)};
 
-  controller = new Controller();
-
   debuggingLeg = new GraphicsLeg(Vector3(0.75f));
   debuggingLeg->showDebuggingWindow = true;
   debuggingLeg->showMeshes = true;
@@ -162,6 +168,12 @@ MyApplication::MyApplication(const Arguments& arguments):
   setMinimalLoopPeriod(16);
 
   _timeline.start();
+}
+
+MyApplication::~MyApplication() {
+  if(_steamIntegration) {
+    _steamIntegration->shutdown();
+  }
 }
 
 bool showLegInfoWindow = false; // A flag to track whether to show the leg info window or not
@@ -441,6 +453,11 @@ double timeSinceLastSend;
 
 void MyApplication::drawEvent() {
   GL::defaultFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
+
+  if(_steamIntegration) {
+    _steamIntegration->update();
+    controller->applySteamInput(_steamIntegration->getInputState());
+  }
 
   controller->update();
 

@@ -23,9 +23,20 @@
     - For macOS builds with `BLEEP_WITH_STEAM=ON`, copy `libsteam_api.dylib` next to the `bleep` executable during build (similar to models copy step).
     - Ensure the copy only runs when the source dylib exists and keep other platforms untouched for now.
   - Done: Added a post-build copy step on macOS that places `libsteam_api.dylib` beside the CLI executable whenever Steam support and the SDK dylib are available.
-- [ ] Feed Steam Input into `Controller`
+- [x] Feed Steam Input into `Controller`
+  - Plan for this step:
+    - Instantiate `SteamIntegration` inside `MyApplication`, tie into lifecycle (init/update/shutdown) and forward pointer to `Controller`.
+    - Extend `Controller` to accept optional Steam state and blend with SDL input (Steam wins when connected).
+    - Surface a simple ImGui indicator showing whether Steam input is active.
   - Update the controller update path to consume Steam Input data when available, fall back to SDL otherwise.
   - Reflect Steam Input status in the ImGui controller UI for debugging.
+  - Done: `MyApplication` now owns a `SteamIntegration` instance, updates it each frame, and feeds the normalized controller state into `Controller`, which displays Steam status in the GUI and overrides joystick vectors whenever a Steam pad is connected.
+- [x] Add Steam Input analog actions
+  - Plan for this step:
+    - Introduce a Steam Input action manifest with gameplay action set + analog “Move/Look” actions and make its path available via a compile definition.
+    - During Steam integration init, load the manifest, cache action set/analog handles, and mark whether analog data is available.
+    - Update the Steam polling path to activate the action set per controller and read analog values via `GetAnalogActionData`, populating `SteamInputState`.
+  - Done: Added a manifest (`steam_input_manifest.vdf`), exposed its path via `STEAM_ACTION_MANIFEST`, and taught `SteamIntegration` to load the manifest, cache analog action handles, and pull stick data into `SteamInputState` so the controller GUI reflects true Steam Input analog values.
 - [ ] Implement Steam Cloud persistence manager
   - Decide on config/state payload (e.g., controller tuning, serial UI prefs) and serialize to a small file.
   - Wrap Steam Remote Storage calls for upload/download with graceful fallback when unavailable.

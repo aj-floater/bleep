@@ -1,0 +1,27 @@
+"actions"
+{
+	"action_manifest_version"	"1"
+	"default_action_set"		"Gameplay"
+
+	"action_sets"
+	[
+		{
+			"name"	"Gameplay"
+			"usage"	"singleplayer"
+		}
+	]
+
+	"actions"
+	[
+		{
+			"name"	"Move"
+			"type"	"analog"
+			"input_mode"	"joystick_move"
+		},
+		{
+			"name"	"Look"
+			"type"	"analog"
+			"input_mode"	"joystick_move"
+		}
+	]
+}

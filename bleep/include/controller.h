@@ -5,6 +5,8 @@
 #include <Magnum/Math/Vector2.h>
 #include <SDL.h>
 
+#include "steamIntegration.h"
+
 #if __APPLE__
 #include <IOKit/hid/IOHIDLib.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -166,6 +168,12 @@ public:
   void showGUI(){
     ImGui::Begin("Joystick Controller");
 
+    if (steamInputActive) {
+      ImGui::TextColored(ImVec4(0.4f, 0.85f, 0.4f, 1.0f), "Steam Input connected");
+    } else {
+      ImGui::TextColored(ImVec4(0.85f, 0.4f, 0.4f, 1.0f), "Steam Input inactive");
+    }
+
     ImVec2 position = ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowWidth()/2 - 50, ImGui::GetWindowPos().y + ImGui::GetWindowHeight()/2);
     DrawJoystick(leftJoystick.x(), leftJoystick.y(), position, 40);
 
@@ -227,6 +235,15 @@ public:
 
   bool leftbutton;
   bool rightbutton;
+
+  void applySteamInput(const SteamInputState& state) {
+    steamInputActive = state.connected;
+    if (!state.connected || !state.hasAnalog) return;
+    leftJoystick = Vector2(state.leftX, state.leftY);
+    rightJoystick = Vector2(state.rightX, state.rightY);
+  }
+
+  bool steamInputActive = false;
 };
 
 #endif
