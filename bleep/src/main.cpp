@@ -385,6 +385,24 @@ void MyApplication::renderGUI() {
     ImGui::End();
   }
 
+  { // Mode Window
+    ImGui::Begin("Mode Selection");           // Create a separate window
+
+    ImGui::TextWrapped("Select the current mode:"); 
+
+    // Walking button
+    if (ImGui::RadioButton("Walking", body->mode == WALKING))
+        body->mode = WALKING;
+
+    // Standing button
+    if (ImGui::RadioButton("Standing", body->mode == STANDING))
+        body->mode = STANDING;
+
+    ImGui::End();
+}
+
+
+
   controller->showGUI();
 
   /* Update application cursor */
@@ -574,21 +592,21 @@ void MyApplication::anyEvent(SDL_Event& event) {
         case SDL_CONTROLLER_AXIS_RIGHTY:
           controller->rightJoystick.y() = value / 32767.0f;
           break;
-        case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-          _stepTime = 0.5f - (value / 32767.0f + 1) * 0.1;
-          break;
-        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-          _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
-          break;
+        // case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+        //   _stepTime = 0.5f - (value / 32767.0f + 1) * 0.1;
+        //   break;
+        // case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+        //   _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
+        //   break;
       }
       break;
     case 1540:
       switch (event.cbutton.button) {
-      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
+      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_LEFT:
           // std::cerr << "X pressed!" << std::endl;
           body->mode = WALKING;
           break;
-      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
+      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
           // std::cerr << "B pressed!" << std::endl;
           body->mode = STANDING;
           body->defaultPosition = body->_position;

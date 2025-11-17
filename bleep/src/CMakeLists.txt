@@ -20,8 +20,13 @@ add_executable(bleep
 
 ArcBall.cpp
 main.cpp
+steamIntegration.cpp
 ../include/MacSerialPort/SerialPort/SerialPort.cpp
     )
+
+if(BLEEP_WITH_STEAM)
+    target_compile_definitions(bleep PRIVATE BLEEP_WITH_STEAM)
+endif()
 
 
 add_dependencies(bleep
@@ -60,12 +65,12 @@ elseif()
     )
 endif()
 
-if(CORRADE_TARGET_APPLE)
-    set_target_properties(bleep PROPERTIES
-        MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_BUNDLE_NAME "My Application"
-        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "cz.mosra.magnum.my-application")
-endif()
+# if(CORRADE_TARGET_APPLE)
+#     set_target_properties(bleep PROPERTIES
+#         MACOSX_BUNDLE ON
+#         MACOSX_BUNDLE_BUNDLE_NAME "My Application"
+#         MACOSX_BUNDLE_BUNDLE_IDENTIFIER "cz.mosra.magnum.my-application")
+# endif()
 
 install(TARGETS bleep DESTINATION ${MAGNUM_BINARY_INSTALL_DIR})
 

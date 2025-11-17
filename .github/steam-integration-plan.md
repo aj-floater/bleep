@@ -1,0 +1,21 @@
+- [x] Establish Steam integration scaffolding
+  - Plan for this step:
+    - Inspect build setup to see where optional Steam deps should sit and confirm no Steam headers exist yet.
+    - Sketch where a Steam integration module would live (new files) without adding functionality.
+  - Define optional build/runtime flags for Steamworks, detect presence without breaking current builds.
+  - Add placeholder module(s) responsible for wrapping Steam API entry points (Input + Cloud) while remaining dormant when Steam isn’t available.
+  - Done: Added `BLEEP_WITH_STEAM` CMake option, wired compile definition, and created placeholder `steamIntegration` module (header + source) that currently only tracks runtime availability.
+- [ ] Implement Steam Input manager
+  - Initialize Steam Input after Steam API init, expose normalized stick/button state.
+  - Ensure it handles absence of Steam (no-op) and AppID 480 is used.
+- [ ] Feed Steam Input into `Controller`
+  - Update the controller update path to consume Steam Input data when available, fall back to SDL otherwise.
+  - Reflect Steam Input status in the ImGui controller UI for debugging.
+- [ ] Implement Steam Cloud persistence manager
+  - Decide on config/state payload (e.g., controller tuning, serial UI prefs) and serialize to a small file.
+  - Wrap Steam Remote Storage calls for upload/download with graceful fallback when unavailable.
+- [ ] Hook Steam Cloud into app lifecycle
+  - Load cloud/local config on startup and propagate values to existing systems.
+  - Save + queue cloud uploads on shutdown or when settings change.
+- [ ] Document integration switches
+  - Update README/copilot instructions with how to enable/disable Steam features and any env vars needed during development.
