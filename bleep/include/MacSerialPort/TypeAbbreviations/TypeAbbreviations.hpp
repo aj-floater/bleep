@@ -1,6 +1,7 @@
 //TypeAbbreviations.hpp
 
 //Convenience abbreviations for commonly-used standard types
+#ifdef SerialPort
 
 #ifndef __TYPE_ABBREVIATIONS_HPP__
 #define __TYPE_ABBREVIATIONS_HPP__
@@ -47,3 +48,5 @@ typedef std::vector<float> fvec;
 
 
 #endif //__TYPE_ABBREVIATIONS_HPP__
+
+#endif

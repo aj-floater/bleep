@@ -1,4 +1,5 @@
 //SerialPort.hpp
+#ifdef SerialPort
 
 #ifndef __SERIAL_PORT_HPP__
 #define __SERIAL_PORT_HPP__
@@ -9,6 +10,7 @@
 #include <cstdio>
 #include <iostream>
 #include <array>
+#include <vector>
 
 
 int openAndConfigureSerialPort(const char* portPath, int baudRate);
@@ -44,3 +46,5 @@ std::string getSerialPorts();
 std::vector<std::string> parseSerialPorts(const std::string& output);
 
 #endif //__SERIAL_PORT_HPP__
+
+#endif
