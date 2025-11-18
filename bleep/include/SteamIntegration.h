@@ -7,46 +7,18 @@ namespace SteamIntegration {
 
 enum class ActionSetId : std::uint8_t {
     Gameplay = 0,
-    Menu,
     Count
 };
 
-enum class DigitalActionId : std::uint16_t {
-    ButtonSouth = 0,
-    ButtonEast,
-    ButtonWest,
-    ButtonNorth,
-    DPadUp,
-    DPadDown,
-    DPadLeft,
-    DPadRight,
-    LeftBumper,
-    RightBumper,
-    LeftTriggerClick,
-    RightTriggerClick,
-    LeftStickClick,
-    RightStickClick,
-    Menu,
-    View,
-    Steam,
-    QuickAccess,
-    LeftPaddleUpper,
-    LeftPaddleLower,
-    RightPaddleUpper,
-    RightPaddleLower,
-    LeftTrackpadClick,
-    RightTrackpadClick,
+enum class DigitalActionId : std::uint8_t {
+    BodyRaise = 0,
+    BodyLower,
     Count
 };
 
-enum class AnalogActionId : std::uint16_t {
-    LeftStick = 0,
-    RightStick,
-    LeftTrigger,
-    RightTrigger,
-    LeftTrackpad,
-    RightTrackpad,
-    Gyro,
+enum class AnalogActionId : std::uint8_t {
+    Move = 0,
+    Camera,
     Count
 };
 

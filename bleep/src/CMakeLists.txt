@@ -36,6 +36,9 @@ add_dependencies(bleep
 
 if(BLEEP_ENABLE_STEAM)
     set(BLEEP_STEAM_INPUT_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/../steam_input_manifest.vdf")
+    set(BLEEP_STEAM_INPUT_LAYOUTS
+        "${CMAKE_CURRENT_SOURCE_DIR}/../xbox_controller.vdf"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../steamdeck_controller.vdf")
     if(EXISTS "${BLEEP_STEAM_INPUT_MANIFEST}")
         target_compile_definitions(bleep PRIVATE BLEEP_STEAM_INPUT_MANIFEST_PATH="${BLEEP_STEAM_INPUT_MANIFEST}")
     endif()
@@ -104,6 +107,25 @@ if(BLEEP_ENABLE_STEAM)
                 COMMAND ${CMAKE_COMMAND} -E echo "${STEAM_APPID_DEFAULT}" > "$<TARGET_FILE_DIR:bleep>/steam_appid.txt"
                 COMMENT "Writing default steam_appid.txt (${STEAM_APPID_DEFAULT})")
         endif()
+        if(EXISTS "${BLEEP_STEAM_INPUT_MANIFEST}")
+            add_custom_command(TARGET bleep POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${BLEEP_STEAM_INPUT_MANIFEST}"
+                    "$<TARGET_FILE_DIR:bleep>/steam_input_manifest.vdf"
+                COMMENT "Copying Steam Input manifest beside bleep executable")
+        endif()
+        foreach(_layout ${BLEEP_STEAM_INPUT_LAYOUTS})
+            if(EXISTS "${_layout}")
+                get_filename_component(_layout_filename "${_layout}" NAME)
+                add_custom_command(TARGET bleep POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${_layout}"
+                        "$<TARGET_FILE_DIR:bleep>/${_layout_filename}"
+                    COMMENT "Copying ${_layout_filename} beside bleep executable")
+            endif()
+        endforeach()
+        install(FILES ${BLEEP_STEAM_INPUT_MANIFEST} ${BLEEP_STEAM_INPUT_LAYOUTS}
+            DESTINATION ${MAGNUM_BINARY_INSTALL_DIR})
     endif()
 endif()
 

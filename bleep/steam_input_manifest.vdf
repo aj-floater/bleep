@@ -1,89 +1,45 @@
 "Action Manifest"
 {
+    "configurations"
+    {
+        "controller_xboxone"
+        {
+            "0"
+            {
+                "path"        "xbox_controller.vdf"
+            }
+        }
+        "controller_neptune"
+        {
+            "0"
+            {
+                "path"        "steamdeck_controller.vdf"
+            }
+        }
+    }
     "actions"
     {
         "bleep_gameplay"
         {
-            "title"        "#GameplaySet"
+            "title"        "#Set_Gameplay"
             "legacy_set"        "0"
             "StickPadGyro"
             {
-                "stick_left"
+                "move"
                 {
-                    "title"        "#LeftStick"
+                    "title"        "#Action_Move"
                     "input_mode"        "joystick_move"
                 }
-                "stick_right"
+                "camera"
                 {
-                    "title"        "#RightStick"
+                    "title"        "#Action_Camera"
                     "input_mode"        "joystick_move"
-                }
-                "trigger_left"
-                {
-                    "title"        "#TriggerLeft"
-                    "input_mode"        "trigger"
-                }
-                "trigger_right"
-                {
-                    "title"        "#TriggerRight"
-                    "input_mode"        "trigger"
-                }
-                "trackpad_left"
-                {
-                    "title"        "#TrackpadLeft"
-                    "input_mode"        "joystick_move"
-                }
-                "trackpad_right"
-                {
-                    "title"        "#TrackpadRight"
-                    "input_mode"        "joystick_move"
-                }
-                "gyro"
-                {
-                    "title"        "#Gyro"
-                    "input_mode"        "gyro"
                 }
             }
             "Button"
             {
-                "button_south"        "#ButtonSouth"
-                "button_east"        "#ButtonEast"
-                "button_west"        "#ButtonWest"
-                "button_north"        "#ButtonNorth"
-                "dpad_up"        "#DPadUp"
-                "dpad_down"        "#DPadDown"
-                "dpad_left"        "#DPadLeft"
-                "dpad_right"        "#DPadRight"
-                "bumper_left"        "#BumperLeft"
-                "bumper_right"        "#BumperRight"
-                "trigger_left_click"        "#TriggerLeftClick"
-                "trigger_right_click"        "#TriggerRightClick"
-                "stick_left_click"        "#StickLeftClick"
-                "stick_right_click"        "#StickRightClick"
-                "menu_button"        "#MenuButton"
-                "view_button"        "#ViewButton"
-                "steam_button"        "#SteamButton"
-                "qam_button"        "#QuickAccessButton"
-                "paddle_left_upper"        "#PaddleLeftUpper"
-                "paddle_left_lower"        "#PaddleLeftLower"
-                "paddle_right_upper"        "#PaddleRightUpper"
-                "paddle_right_lower"        "#PaddleRightLower"
-                "trackpad_left_click"        "#TrackpadLeftClick"
-                "trackpad_right_click"        "#TrackpadRightClick"
-            }
-        }
-        "bleep_menu"
-        {
-            "title"        "#MenuControls"
-            "legacy_set"        "0"
-            "Button"
-            {
-                "menu_up"        "#MenuUp"
-                "menu_down"        "#MenuDown"
-                "menu_left"        "#MenuLeft"
-                "menu_right"        "#MenuRight"
-                "menu_select"        "#MenuSelect"
-                "menu_cancel"        "#MenuCancel"
+                "body_raise"        "#Action_BodyRaise"
+                "body_lower"        "#Action_BodyLower"
             }
         }
     }
@@ -92,46 +48,12 @@
         "english"
         {
             "title"        "Bleep Steam Input"
-            "description"        "Covers Steam Deck + Xbox buttons for gameplay + menus."
-            "GameplaySet"        "Gameplay"
-            "LeftStick"        "Left Stick"
-            "RightStick"        "Right Stick"
-            "TriggerLeft"        "Left Trigger"
-            "TriggerRight"        "Right Trigger"
-            "TrackpadLeft"        "Left Trackpad"
-            "TrackpadRight"        "Right Trackpad"
-            "Gyro"        "Gyro"
-            "ButtonSouth"        "South Button"
-            "ButtonEast"        "East Button"
-            "ButtonWest"        "West Button"
-            "ButtonNorth"        "North Button"
-            "DPadUp"        "D-Pad Up"
-            "DPadDown"        "D-Pad Down"
-            "DPadLeft"        "D-Pad Left"
-            "DPadRight"        "D-Pad Right"
-            "BumperLeft"        "Left Bumper"
-            "BumperRight"        "Right Bumper"
-            "TriggerLeftClick"        "Left Trigger Click"
-            "TriggerRightClick"        "Right Trigger Click"
-            "StickLeftClick"        "Left Stick Click"
-            "StickRightClick"        "Right Stick Click"
-            "MenuButton"        "Menu Button"
-            "ViewButton"        "View Button"
-            "SteamButton"        "Steam Button"
-            "QuickAccessButton"        "Quick Access Button"
-            "PaddleLeftUpper"        "Left Paddle Upper"
-            "PaddleLeftLower"        "Left Paddle Lower"
-            "PaddleRightUpper"        "Right Paddle Upper"
-            "PaddleRightLower"        "Right Paddle Lower"
-            "TrackpadLeftClick"        "Left Trackpad Click"
-            "TrackpadRightClick"        "Right Trackpad Click"
-            "MenuControls"        "Menu Navigation"
-            "MenuUp"        "Menu Up"
-            "MenuDown"        "Menu Down"
-            "MenuLeft"        "Menu Left"
-            "MenuRight"        "Menu Right"
-            "MenuSelect"        "Menu Select"
-            "MenuCancel"        "Menu Cancel"
+            "description"        "Current Bleep controls: move, look, and adjust body height."
+            "Set_Gameplay"        "Gameplay"
+            "Action_Move"        "Move"
+            "Action_Camera"        "Camera"
+            "Action_BodyRaise"        "Raise Body"
+            "Action_BodyLower"        "Lower Body"
         }
     }
 }

@@ -18,45 +18,17 @@ namespace {
     ActionHandles gHandles{};
 
     constexpr std::array<const char*, static_cast<std::size_t>(ActionSetId::Count)> ActionSetNames{
-        "bleep_gameplay",
-        "bleep_menu"
+        "bleep_gameplay"
     };
 
     constexpr std::array<const char*, static_cast<std::size_t>(DigitalActionId::Count)> DigitalActionNames{
-        "button_south",
-        "button_east",
-        "button_west",
-        "button_north",
-        "dpad_up",
-        "dpad_down",
-        "dpad_left",
-        "dpad_right",
-        "bumper_left",
-        "bumper_right",
-        "trigger_left_click",
-        "trigger_right_click",
-        "stick_left_click",
-        "stick_right_click",
-        "menu_button",
-        "view_button",
-        "steam_button",
-        "qam_button",
-        "paddle_left_upper",
-        "paddle_left_lower",
-        "paddle_right_upper",
-        "paddle_right_lower",
-        "trackpad_left_click",
-        "trackpad_right_click"
+        "body_raise",
+        "body_lower"
     };
 
     constexpr std::array<const char*, static_cast<std::size_t>(AnalogActionId::Count)> AnalogActionNames{
-        "stick_left",
-        "stick_right",
-        "trigger_left",
-        "trigger_right",
-        "trackpad_left",
-        "trackpad_right",
-        "gyro"
+        "move",
+        "camera"
     };
 
 #if defined(BLEEP_WITH_STEAM)
@@ -180,6 +152,8 @@ bool initialize()
 
     gSteamInitialized = true;
 
+    const bool manifestConfigured = configureManifest();
+
     if(!SteamInput()->Init(false))
     {
         Corrade::Utility::Warning{} << "[SteamIntegration] SteamInput init failed.";
@@ -187,9 +161,11 @@ bool initialize()
         return false;
     }
 
+    if(manifestConfigured)
+        loadActionHandles();
+    else
+        Corrade::Utility::Warning{} << "[SteamIntegration] Steam Input manifest missing, action handles not loaded.";
     gSteamInputInitialized = true;
-    configureManifest();
-    loadActionHandles();
     Corrade::Utility::Debug{} << "[SteamIntegration] SteamInput initialized.";
     return true;
 #endif
