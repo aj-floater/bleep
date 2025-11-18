@@ -1,0 +1,21 @@
+- [x] Review SteamworksExample Steam Input implementation
+  - Ensure we understand how Steam Deck and Xbox controller buttons are mapped
+  - Note any helpers or abstractions we should port or mimic for parity
+  - Plan for this step:
+    - Inspect `SteamworksExample/gameenginesdl.cpp` SteamInput bootstrap + action handle usage
+    - Read `steam_input_manifest.vdf`/`xbox_controller.vdf` to capture action sets and button coverage
+    - Note helper calls for controller discovery, LED color, remote play metadata
+  - Done: Confirmed Example grabs digital/analog handles per action set, polls with `FindActiveSteamInputDevice`, and exposes helper prompts/LED hooks we can mirror for Deck/Xbox parity
+- [ ] Prepare bleep build to consume bundled steam-sdk on macOS and Steam Deck
+  - Confirm include/library paths and conditional compilation remain cross compatible
+- [ ] Scaffold Steam Input init/teardown code mimicking SteamworksExample pattern
+  - Provide cross-platform bootstrapping that works on macOS and Steam Deck
+- [ ] Implement controller action set + action mapping covering every Steam Deck + Xbox button
+  - Mirror naming/mapping conventions from SteamworksExample to stay consistent
+- [ ] Route Steam Input state into the existing controller system (poll/update loop)
+  - Keep implementation incremental to avoid large refactors
+- [ ] Implement fallback paths when Steam Input is unavailable (non-Steam builds, dev machines)
+- [ ] Add Steam Cloud config referencing steam-sdk guidance
+  - Keep file layout identical across Steam Deck and macOS builds
+- [ ] Verify both Steam Input and Cloud init paths compile on Deck + macOS
+  - Add TODOs for any remaining testing gaps

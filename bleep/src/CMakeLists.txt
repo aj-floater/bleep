@@ -60,12 +60,12 @@ elseif()
     )
 endif()
 
-if(CORRADE_TARGET_APPLE)
-    set_target_properties(bleep PROPERTIES
-        MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_BUNDLE_NAME "My Application"
-        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "cz.mosra.magnum.my-application")
-endif()
+# if(CORRADE_TARGET_APPLE)
+#     set_target_properties(bleep PROPERTIES
+#         MACOSX_BUNDLE ON
+#         MACOSX_BUNDLE_BUNDLE_NAME "My Application"
+#         MACOSX_BUNDLE_BUNDLE_IDENTIFIER "cz.mosra.magnum.my-application")
+# endif()
 
 install(TARGETS bleep DESTINATION ${MAGNUM_BINARY_INSTALL_DIR})
 
