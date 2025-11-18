@@ -461,6 +461,16 @@ void MyApplication::drawEvent() {
       body->_position -= Vector3(0, deltaTime * 2.0f, 0);
     }
   }
+  const float leftTriggerValue = controller->GetLeftTriggerValue();
+  const float rightTriggerValue = controller->GetRightTriggerValue();
+  const float triggerDelta = rightTriggerValue - leftTriggerValue;
+  if(Math::abs(triggerDelta) > 0.01f) {
+    Debug{} << "Trigger values - Left:" << leftTriggerValue << "Right:" << rightTriggerValue << "Delta:" << triggerDelta;
+    float newHeight = body->_position.y() + triggerDelta * deltaTime * 2.0f;
+    if(newHeight > 1.5f) newHeight = 1.5f;
+    if(newHeight < 0.25f) newHeight = 0.25f;
+    body->_position.y() = newHeight;
+  }
 
   body->getAllJointAngles();
   out = body->intArrayToString(body->jointAngles, 18);

@@ -147,6 +147,8 @@ void init_gamepad() {
 
 using namespace Magnum;
 
+#define CONTROLLER_DEBUG 0
+
 #define MAX_NUM_JOYSTICKS 6
 
 SDL_Joystick *joysticks[MAX_NUM_JOYSTICKS];
@@ -156,7 +158,7 @@ int connected; // connected joysticks number
 
 class Controller {
 public:
-  Controller() : leftJoystick{0.0f}, rightJoystick{0.0f} {}
+  Controller() : leftJoystick{0.0f}, rightJoystick{0.0f}, leftTrigger(0.0f), rightTrigger(0.0f) {}
 
   void DrawJoystick(float x, float y, ImVec2 position, float radius) {
     if (isnan(x)) x = 0;
@@ -182,6 +184,14 @@ public:
     DrawJoystick(rightJoystick.x(), rightJoystick.y(), position, 40);
     
     ImGui::InvisibleButton("Spacer", ImVec2(1.0f, 100.0f)); // Creates 50px horizontal and 20px vertical space
+
+    ImGui::SeparatorText("Triggers");
+    float triggerBarWidth = ImGui::GetContentRegionAvail().x;
+    ImGui::Text("Left Trigger: %.2f", leftTrigger);
+    ImGui::ProgressBar(leftTrigger, ImVec2(triggerBarWidth, 0.0f));
+
+    ImGui::Text("Right Trigger: %.2f", rightTrigger);
+    ImGui::ProgressBar(rightTrigger, ImVec2(triggerBarWidth, 0.0f));
 
     if (ImGui::Button("Search...")){
       #if __APPLE__
@@ -209,10 +219,12 @@ public:
       fprintf(stderr, "Error: Couldn't initialize SDL. %s\n", SDL_GetError());
       exit(1);
     }
-    
+
+#if CONTROLLER_DEBUG
     fprintf(stdout, "Joystick currently attached: %i.\n\n", SDL_NumJoysticks());
     if(SDL_NumJoysticks() == 0)
       fprintf(stdout, "Check the joystick is properly connected.\nIf the problem persist, you can check the connected USB device with 'lsusb' and the logs in /var/logs/syslog\n"); 
+#endif
     
     SDL_JoystickEventState(SDL_ENABLE);
   }
@@ -221,7 +233,9 @@ public:
   {
     int i;
     for(i = 0; i < MAX_NUM_JOYSTICKS; i++){
+      #if CONTROLLER_DEBUG
       printf(std::to_string(SDL_JoystickInstanceID(joysticks[0])).c_str());
+      #endif
       if(SDL_JoystickInstanceID(joysticks[i]) == id)
         return i;
     }
@@ -236,56 +250,69 @@ public:
     {
       switch (event.axis){
         case 0:
+#if CONTROLLER_DEBUG
           fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (ANALOG_L)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
           if(event.value < 0)
             fprintf(stdout, "(LEFT)\n\n");
           else
             fprintf(stdout, "(RIGHT)\n\n");
+#endif
           leftJoystick.x() = event.value / 32767.0f;
             
           break;
         case 1:
+#if CONTROLLER_DEBUG
           fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (ANALOG_L)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
           if(event.value < 0)
             fprintf(stdout, "(UP)\n\n");
           else
             fprintf(stdout, "(DOWN)\n\n");
+#endif
           leftJoystick.y() = event.value / 32767.0f;
 
           break;
         case 2:
+#if CONTROLLER_DEBUG
+          fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (ANALOG_R)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
+          if(event.value < 0)
+            fprintf(stdout, "(LEFT)\n\n");
+          else
+            fprintf(stdout, "(RIGHT)\n\n");
+#endif
+          rightJoystick.x() = event.value / 32767.0f;
+
+          break;
+        case 3:
+#if CONTROLLER_DEBUG
+          fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (ANALOG_R)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
+          if(event.value < 0)
+            fprintf(stdout, "(UP)\n\n");
+          else
+            fprintf(stdout, "(DOWN)\n\n");
+#endif
+          rightJoystick.y() = event.value / 32767.0f;
+
+          break;
+        case 4:
+#if CONTROLLER_DEBUG
           fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (TRIGGER_L)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
           if(event.value < 0)
             fprintf(stdout, "(UP)\n\n");
           else
             fprintf(stdout, "(DOWN)\n\n");
-          
+#endif
+          leftTrigger = normalizeTriggerValue(event.value);
             
           break;
-        case 3:
-          fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (ANALOG_R)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
-          if(event.value < 0)
-            fprintf(stdout, "(LEFT)\n\n");
-          else
-            fprintf(stdout, "(RIGHT)\n\n");
-          rightJoystick.x() = event.value / 32767.0f;
-
-          break;
-        case 4:
-          fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (ANALOG_R)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
-          if(event.value < 0)
-            fprintf(stdout, "(UP)\n\n");
-          else
-            fprintf(stdout, "(DOWN)\n\n");
-          rightJoystick.y() = event.value / 32767.0f;
-
-          break;
         case 5:
+#if CONTROLLER_DEBUG
           fprintf(stdout, "[%zu] SDL_JOYAXISMOTION\n  Joystick:\t#%i(%i)\n  Axis:\t\t%i (TRIGGER_R)\n  Value:\t%i ", event.timestamp, i, event.which, event.axis, event.value);
           if(event.value < 0)
             fprintf(stdout, "(UP)\n\n");
           else
             fprintf(stdout, "(DOWN)\n\n");
+#endif
+          rightTrigger = normalizeTriggerValue(event.value);
 
           break;
 
@@ -298,7 +325,9 @@ public:
   void doJoystickButtonUp(SDL_JoyButtonEvent *event)
   {
     int i = getJoyIndex(event->which);
+#if CONTROLLER_DEBUG
     fprintf(stdout, "[%zu] SDL_JOYBUTTONUP\n  Joystick:\t#%i(%i)\n  Button:\t%i\n\n", event->timestamp, i, event->which, event->button);
+#endif
     
     
   }
@@ -344,7 +373,9 @@ public:
     }
     
     // joysticks and haptic devices opening
+#if CONTROLLER_DEBUG
     fprintf(stdout, "[%zu] SDL_JOYDEVICEADDED\n", event.timestamp);
+#endif
     if((joysticks[i] = SDL_JoystickOpen(event.which)) == NULL)
     {
       fprintf(stderr, "Error: Couldn't open the joystick(%i) SDL. %s\n\n", event.which, SDL_GetError());
@@ -352,12 +383,14 @@ public:
     }
     connected++;
     
+#if CONTROLLER_DEBUG
     fprintf(stdout, "  Index:\t\t#%i\n", i);
     fprintf(stdout, "  Joystick ID:\t\t%i\n", SDL_JoystickInstanceID(joysticks[i]));
     fprintf(stdout, "  Name:\t\t\t%s\n", SDL_JoystickName(joysticks[i]));
     fprintf(stdout, "  Number of Axes:\t%i\n", SDL_JoystickNumAxes(joysticks[i]));
     fprintf(stdout, "  Number of Buttons:\t%i\n", SDL_JoystickNumButtons(joysticks[i]));
     fprintf(stdout, "  Number of Balls:\t%i\n", SDL_JoystickNumBalls(joysticks[i]));
+#endif
     
     // check if the joystick is a haptic device
     if(SDL_JoystickIsHaptic(joysticks[i]) < 0)
@@ -385,36 +418,48 @@ public:
     // Initialize a haptic device for simple rumble playback
     if(SDL_HapticRumbleInit(haptics[i]) < 0)
     {
+#if CONTROLLER_DEBUG
       fprintf(stdout, "  Haptic rumble:\tdisabled\n\n");
+#endif
       fprintf(stderr, "Error: Joystick #%i(%i) haptic rumble initialization failed. %s\n\n", i, event.which, SDL_GetError());
       SDL_HapticClose(haptics[i]);
       haptics[i] = NULL;
       return;
     }
+#if CONTROLLER_DEBUG
     fprintf(stdout, "  Haptic rumble:\tenabled\n\n");
     
     fprintf(stdout, "Joystick currently connected: %i.\n\n", SDL_NumJoysticks());
+#endif
   }
 
   void doJoystickRemoved(SDL_JoyDeviceEvent& event)
   {
     int i = getJoyIndex(event.which);
     
+#if CONTROLLER_DEBUG
     fprintf(stdout, "[%zu] SDL_JOYDEVICEREMOVED\n", event.timestamp);
+#endif
     
     // clear joystick
     SDL_JoystickClose(joysticks[i]);
     joysticks[i] = NULL;
+#if CONTROLLER_DEBUG
     fprintf(stdout, "  Closed joystick:\t#%i(%i)\n", i, event.which);
+#endif
     
     // clear haptic
     SDL_HapticClose(haptics[i]);
     haptics[i] = NULL;
+#if CONTROLLER_DEBUG
     fprintf(stdout, "  Closed haptic device:\t#%i(%i)\n\n", i, event.which);
+#endif
     
     rumble[i] = 0;
     connected--;
+#if CONTROLLER_DEBUG
     fprintf(stdout, "Joystick currently connected: %i.\n\n", SDL_NumJoysticks());
+#endif
   }
 
   float GetLeftJoystickScalar() {
@@ -422,6 +467,12 @@ public:
   }
   float GetRightJoystickScalar() {
     return sqrt(pow(rightJoystick.x(), 2) + pow(rightJoystick.y(), 2));
+  }
+  float GetLeftTriggerValue() const {
+    return leftTrigger;
+  }
+  float GetRightTriggerValue() const {
+    return rightTrigger;
   }
 
   bool CheckIfJoysticksCentered(){
@@ -440,11 +491,23 @@ public:
   Vector2 rightJoystick;
   Vector2 leftMovement;
   Vector2 rightMovement;
+  float leftTrigger;
+  float rightTrigger;
 
   bool centered = false;
 
   bool leftbutton;
   bool rightbutton;
+
+private:
+  static float normalizeTriggerValue(Sint16 value) {
+    float normalized = (static_cast<float>(value) + 32768.0f) / 65535.0f;
+    if (normalized < 0.0f)
+      return 0.0f;
+    if (normalized > 1.0f)
+      return 1.0f;
+    return normalized;
+  }
 };
 
 #endif
