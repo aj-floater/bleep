@@ -125,7 +125,7 @@ MyApplication::MyApplication(const Arguments& arguments):
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
 
   ImGuiIO &io = ImGui::GetIO();
-  io.IniFilename = "/Users/archiejames/coding/bleep-prime/imgui.ini";
+  io.IniFilename = "/home/deck/Coding/bleep/imgui.ini";
 
   GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
   GL::Renderer::setBlendEquation(GL::Renderer::BlendEquation::Add,
@@ -518,100 +518,48 @@ void MyApplication::viewportEvent(ViewportEvent& event) {
 }
 
 void MyApplication::keyPressEvent(KeyEvent& event) {
-    // if (_imgui.handleKeyPressEvent(event))
-    //     return;
 
-    if(event.key() == KeyEvent::Key::Down)
-      Debug{} << "Down";
-
-    // switch (event.key()) {
-    //     case KeyEvent::Key::W:
-    //         controller->leftMovement.y() = -1.0f;
-    //         break;
-    //     case KeyEvent::Key::S:
-    //         controller->leftMovement.y() = 1.0f;
-    //         break;
-    //     case KeyEvent::Key::A:
-    //         controller->leftMovement.x() = -1.0f;
-    //         break;
-    //     case KeyEvent::Key::D:
-    //         controller->leftMovement.x() = 1.0f;
-    //         break;
-    //     case KeyEvent::Key::Up:
-    //         controller->rightMovement.y() = -1.0f;
-    //         break;
-    //     case KeyEvent::Key::Down:
-    //         controller->rightMovement.y() = 1.0f;
-    //         break;
-    //     case KeyEvent::Key::Left:
-    //         controller->rightMovement.x() = -1.0f;
-    //         break;
-    //     case KeyEvent::Key::Right:
-    //         controller->rightMovement.x() = 1.0f;
-    //         break;
-    //     default:
-    //         break;
-    // }
 }
 
 float value;
 
 void MyApplication::anyEvent(SDL_Event& event) {
-  // Debug{} << event.type;
-  switch(event.type)
-  {  
-    case SDL_CONTROLLERDEVICEADDED:
-      if (!ps3controller) {
-          ps3controller = SDL_GameControllerOpen(event.cdevice.which);
-      }
+  switch (event.type)
+  {
+    case SDL_JOYAXISMOTION:
+      controller->doJoystickAxisMotion(event.jaxis);
       break;
-    case SDL_CONTROLLERDEVICEREMOVED:
-      if (ps3controller && event.cdevice.which == SDL_JoystickInstanceID(
-              SDL_GameControllerGetJoystick(ps3controller))) {
-          SDL_GameControllerClose(ps3controller);
-          ps3controller = findController();
-      }
+
+    case SDL_JOYDEVICEADDED:
+				controller->doJoystickAdded(event.jdevice);
+				break;
+
+    case SDL_JOYDEVICEREMOVED:
+				controller->doJoystickRemoved(event.jdevice);
+				break;
+
+    // case SDL_JOYBUTTONDOWN:
+		// 		controller->doJoystickButtonDown(&event.jbutton);
+		// 		break;
+			
+    case SDL_JOYBUTTONUP:
+        controller->doJoystickButtonUp(&event.jbutton);
+        switch(event.jbutton.button){
+          case 1:
+            body->mode = STANDING;
+            break;
+          case 2:
+            body->mode = WALKING;
+            break;  
+
+          default:
+            break; 
+        }
+
+        break;
+
+    default:
       break;
-    case SDL_JOYAXISMOTION:  /* Handle Joystick Motion */
-      value = event.jaxis.value;
-      switch (event.jaxis.axis){
-        case SDL_CONTROLLER_AXIS_LEFTX:
-          controller->leftJoystick.x() = value / 32767.0f;
-          break;
-        case SDL_CONTROLLER_AXIS_LEFTY:
-          controller->leftJoystick.y() = value / 32767.0f;
-          break;
-        case SDL_CONTROLLER_AXIS_RIGHTX:
-          controller->rightJoystick.x() = value / 32767.0f;
-          break;
-        case SDL_CONTROLLER_AXIS_RIGHTY:
-          controller->rightJoystick.y() = value / 32767.0f;
-          break;
-        case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
-          _stepTime = 0.5f - (value / 32767.0f + 1) * 0.1;
-          break;
-        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-          _stepSize = 0.4f + (value / 32767.0f + 1) * 0.2f;
-          break;
-      }
-      break;
-    case 1540:
-      switch (event.cbutton.button) {
-      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X:
-          // std::cerr << "X pressed!" << std::endl;
-          body->mode = WALKING;
-          break;
-      case SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_B:
-          // std::cerr << "B pressed!" << std::endl;
-          body->mode = STANDING;
-          body->defaultPosition = body->_position;
-          body->defaultRotation = body->_rotation;
-          break;
-      }
-      break;
-    // default:
-    //   Debug{} << event.type;
-    //   break;
   }
 }
 

@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Bleep Application
+Exec=/home/deck/Coding/bleep/build/Debug/bin/bleep
+Type=Application
+Terminal=true
