@@ -16,7 +16,7 @@ find_package(MagnumPlugins REQUIRED AssimpImporter)
 
 set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
-add_executable(bleep
+add_executable(bleep MACOSX_BUNDLE
 
 ArcBall.cpp
 main.cpp
@@ -27,8 +27,11 @@ steamIntegration.cpp
 if(BLEEP_WITH_STEAM)
     set(STEAMWORKS_SDK_DIR "${PROJECT_SOURCE_DIR}/steam-sdk" CACHE PATH "Path to the Steamworks SDK root")
     target_include_directories(bleep PRIVATE "${STEAMWORKS_SDK_DIR}/public")
-    set(STEAM_ACTION_MANIFEST_PATH "${CMAKE_CURRENT_SOURCE_DIR}/steam_input/steam_input_manifest.vdf")
-    target_compile_definitions(bleep PRIVATE STEAM_ACTION_MANIFEST=\"${STEAM_ACTION_MANIFEST_PATH}\")
+    set(STEAM_APPID_SOURCE "${PROJECT_SOURCE_DIR}/steam_appid.txt")
+    set(STEAM_INPUT_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../steam_input/steam_input_manifest.vdf"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../steam_input/xbox_controller.vdf"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../steam_input/steam_controller.vdf")
 
     if(APPLE)
         set(STEAMWORKS_LIB "${STEAMWORKS_SDK_DIR}/redistributable_bin/osx/libsteam_api.dylib")
@@ -42,16 +45,36 @@ if(BLEEP_WITH_STEAM)
 
     if(STEAMWORKS_LIB AND EXISTS "${STEAMWORKS_LIB}")
         target_link_libraries(bleep PRIVATE "${STEAMWORKS_LIB}")
-        if(APPLE)
-            get_filename_component(STEAMWORKS_LIB_NAME "${STEAMWORKS_LIB}" NAME)
-            add_custom_command(TARGET bleep POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${STEAMWORKS_LIB}"
-                    "$<TARGET_FILE_DIR:bleep>/${STEAMWORKS_LIB_NAME}"
-                COMMENT "Copying Steamworks dylib next to CLI executable")
-        endif()
+        get_filename_component(STEAMWORKS_LIB_NAME "${STEAMWORKS_LIB}" NAME)
+        add_custom_command(TARGET bleep POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:bleep>"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${STEAMWORKS_LIB}"
+                "$<TARGET_FILE_DIR:bleep>/${STEAMWORKS_LIB_NAME}"
+            COMMENT "Copying Steamworks dylib next to executable")
     else()
         message(WARNING "BLEEP_WITH_STEAM is ON but Steamworks library not found for this platform")
+    endif()
+
+    foreach(steam_input_file IN LISTS STEAM_INPUT_FILES)
+        get_filename_component(_steam_input_name "${steam_input_file}" NAME)
+        add_custom_command(TARGET bleep POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:bleep>"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${steam_input_file}"
+                "$<TARGET_FILE_DIR:bleep>/${_steam_input_name}"
+            COMMENT "Copying ${_steam_input_name} next to executable")
+    endforeach()
+
+    if(EXISTS "${STEAM_APPID_SOURCE}")
+        add_custom_command(TARGET bleep POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:bleep>"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${STEAM_APPID_SOURCE}"
+                "$<TARGET_FILE_DIR:bleep>/steam_appid.txt"
+            COMMENT "Copying steam_appid.txt next to executable")
+    else()
+        message(WARNING "steam_appid.txt not found; Steam may fail to start the app")
     endif()
 endif()
 
@@ -106,3 +129,4 @@ endif()
 install(TARGETS bleep DESTINATION ${MAGNUM_BINARY_INSTALL_DIR})
 
 target_compile_definitions(bleep PRIVATE -DMODELS_DIR="${MODELS_DIR}")
+target_compile_definitions(bleep PRIVATE BLEEP_DEFAULT_LOG_PATH=\"${CMAKE_BINARY_DIR}/log\")

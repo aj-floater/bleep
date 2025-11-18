@@ -5,6 +5,8 @@
 #include <steam/steam_api.h>
 #endif
 
+#include <string>
+
 struct SteamInputState {
   bool connected = false;
   bool hasAnalog = false;
@@ -19,7 +21,7 @@ public:
   SteamIntegration();
   ~SteamIntegration();
 
-  bool initialize();
+  bool initialize(const std::string& manifestPath);
   void shutdown();
   void update();
 
@@ -32,6 +34,7 @@ private:
 
   bool _runtimeActive;
   bool _steamInputAvailable;
+  std::string _manifestPath;
   SteamInputState _inputState;
 #ifdef BLEEP_WITH_STEAM
   InputActionSetHandle_t _actionSetHandle;

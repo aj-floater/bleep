@@ -37,6 +37,12 @@
     - During Steam integration init, load the manifest, cache action set/analog handles, and mark whether analog data is available.
     - Update the Steam polling path to activate the action set per controller and read analog values via `GetAnalogActionData`, populating `SteamInputState`.
   - Done: Added a manifest (`steam_input_manifest.vdf`), exposed its path via `STEAM_ACTION_MANIFEST`, and taught `SteamIntegration` to load the manifest, cache analog action handles, and pull stick data into `SteamInputState` so the controller GUI reflects true Steam Input analog values.
+- [x] Improve Steam runtime diagnostics
+  - Plan for this step:
+    - Add optional log redirection so Steam-launched sessions still capture stdout/stderr to a file.
+    - Provide better logging around manifest loading/Steam Input init failures.
+    - Ensure `steam_appid.txt` and `libsteam_api` get copied next to both the CLI binary and `.app` bundle so Steam can initialize regardless of launch target.
+  - Done: Added optional log redirection, richer manifest/Steam Input logging, and CMake hooks that copy `steam_appid.txt` plus `libsteam_api` to both the CLI output and bundle, making it easier to diagnose Steam launches.
 - [ ] Implement Steam Cloud persistence manager
   - Decide on config/state payload (e.g., controller tuning, serial UI prefs) and serialize to a small file.
   - Wrap Steam Remote Storage calls for upload/download with graceful fallback when unavailable.

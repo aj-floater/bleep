@@ -1,6 +1,7 @@
 #include "steamIntegration.h"
 
 #include <cstdio>
+#include <fstream>
 
 #ifdef BLEEP_WITH_STEAM
 #include <steam/steam_api.h>
@@ -26,7 +27,7 @@ SteamIntegration::~SteamIntegration() {
   shutdown();
 }
 
-bool SteamIntegration::initialize() {
+bool SteamIntegration::initialize(const std::string& manifestPath) {
 #ifdef BLEEP_WITH_STEAM
   if (_runtimeActive) {
     return true;
@@ -43,10 +44,17 @@ bool SteamIntegration::initialize() {
     return false;
   }
 
+  _manifestPath = manifestPath;
   if (SteamInput()) {
-#ifdef STEAM_ACTION_MANIFEST
-    SteamInput()->SetInputActionManifestFilePath(STEAM_ACTION_MANIFEST);
-#endif
+    std::ifstream manifestStream(_manifestPath);
+    if(manifestStream.good()) {
+      if(SteamInput()->SetInputActionManifestFilePath(_manifestPath.c_str()))
+        std::printf("SteamIntegration: action manifest %s registered\n", _manifestPath.c_str());
+      else
+        std::printf("SteamIntegration: failed to register action manifest %s\n", _manifestPath.c_str());
+    } else {
+      std::printf("SteamIntegration: action manifest missing at %s\n", _manifestPath.c_str());
+    }
     _steamInputAvailable = SteamInput()->Init(false);
   } else {
     _steamInputAvailable = false;
@@ -56,12 +64,14 @@ bool SteamIntegration::initialize() {
   }
 
   if (_steamInputAvailable) {
-    _actionSetHandle = SteamInput()->GetActionSetHandle("Gameplay");
-    _moveAnalogHandle = SteamInput()->GetAnalogActionHandle("Move");
-    _lookAnalogHandle = SteamInput()->GetAnalogActionHandle("Look");
-    if(!_actionSetHandle || !_moveAnalogHandle || !_lookAnalogHandle) {
-      std::printf("SteamIntegration: analog handles unavailable; Steam Input will fall back to SDL\n");
-    }
+    _actionSetHandle = SteamInput()->GetActionSetHandle("ship_controls");
+    _moveAnalogHandle = SteamInput()->GetAnalogActionHandle("analog_controls");
+    _lookAnalogHandle = 0;
+
+    if(!_actionSetHandle)
+      std::printf("SteamIntegration: action set handle for ship_controls unavailable\n");
+    if(!_moveAnalogHandle)
+      std::printf("SteamIntegration: analog handle for analog_controls unavailable\n");
   }
 
   _runtimeActive = true;
@@ -129,7 +139,12 @@ void SteamIntegration::pollControllers() {
 
   _inputState.connected = true;
 
-  if(!_actionSetHandle || !_moveAnalogHandle || !_lookAnalogHandle) {
+  static bool missingAnalogLog = false;
+  if(!_actionSetHandle || !_moveAnalogHandle) {
+    if(!missingAnalogLog) {
+      std::printf("SteamIntegration: analog action handles not ready; controller data unavailable\n");
+      missingAnalogLog = true;
+    }
     return;
   }
 
@@ -138,17 +153,12 @@ void SteamIntegration::pollControllers() {
     SteamInput()->ActivateActionSet(handle, _actionSetHandle);
 
     const InputAnalogActionData_t moveData = SteamInput()->GetAnalogActionData(handle, _moveAnalogHandle);
-    const InputAnalogActionData_t lookData = SteamInput()->GetAnalogActionData(handle, _lookAnalogHandle);
-
     if(moveData.bActive) {
       _inputState.hasAnalog = true;
       _inputState.leftX = moveData.x;
       _inputState.leftY = moveData.y;
-    }
-    if(lookData.bActive) {
-      _inputState.hasAnalog = true;
-      _inputState.rightX = lookData.x;
-      _inputState.rightY = lookData.y;
+      _inputState.rightX = moveData.x;
+      _inputState.rightY = moveData.y;
     }
 
     if(_inputState.hasAnalog) break;

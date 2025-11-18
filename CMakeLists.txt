@@ -42,3 +42,10 @@ set(MAGNUM_WITH_IMGUI ON CACHE BOOL "" FORCE)
 add_subdirectory(magnum-integration EXCLUDE_FROM_ALL)
 
 add_subdirectory(bleep)
+
+if(CORRADE_TARGET_APPLE)
+    set_target_properties(bleep PROPERTIES
+        MACOSX_BUNDLE ON
+        MACOSX_BUNDLE_BUNDLE_NAME "Bleep"
+        MACOSX_BUNDLE_BUNDLE_IDENTIFIER "com.example.bleep")
+endif()

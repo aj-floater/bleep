@@ -168,8 +168,8 @@ public:
   void showGUI(){
     ImGui::Begin("Joystick Controller");
 
-    if (steamInputActive) {
-      ImGui::TextColored(ImVec4(0.4f, 0.85f, 0.4f, 1.0f), "Steam Input connected");
+    if (steamInputActive && steamAnalogActive) {
+      ImGui::TextColored(ImVec4(0.2f, 0.85f, 0.3f, 1.0f), "Steam Input success!");
     } else {
       ImGui::TextColored(ImVec4(0.85f, 0.4f, 0.4f, 1.0f), "Steam Input inactive");
     }
@@ -238,12 +238,14 @@ public:
 
   void applySteamInput(const SteamInputState& state) {
     steamInputActive = state.connected;
+    steamAnalogActive = state.hasAnalog;
     if (!state.connected || !state.hasAnalog) return;
     leftJoystick = Vector2(state.leftX, state.leftY);
     rightJoystick = Vector2(state.rightX, state.rightY);
   }
 
   bool steamInputActive = false;
+  bool steamAnalogActive = false;
 };
 
 #endif

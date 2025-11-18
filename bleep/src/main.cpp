@@ -35,6 +35,10 @@ float _stepHeight = 0.3f;
 
 #include "steamIntegration.h"
 #include <memory>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <fstream>
 
 using namespace Magnum;
 using namespace Math::Literals;
@@ -74,6 +78,44 @@ SceneGraph::DrawableGroup3D _drawables;
 Scene3D _scene;
 
 bool playing = false;
+
+namespace {
+std::string resolveActionManifestPath() {
+  std::string manifestPath = "steam_input_manifest.vdf";
+  char* base = SDL_GetBasePath();
+  if(base) {
+    manifestPath = std::string(base) + "steam_input_manifest.vdf";
+    SDL_free(base);
+  }
+  return manifestPath;
+}
+
+void redirectLogsToFileIfNeeded() {
+  const char* explicitPath = std::getenv("BLEEP_LOG_PATH");
+  std::string logPath;
+  if(explicitPath && *explicitPath) logPath = explicitPath;
+#ifdef BLEEP_DEFAULT_LOG_PATH
+  else logPath = BLEEP_DEFAULT_LOG_PATH;
+#else
+  else if(const char* home = std::getenv("HOME")) logPath = std::string(home) + "/bleep-steam.log";
+  else logPath = "bleep-steam.log";
+#endif
+
+  const bool isNewFile = !std::ifstream(logPath).good();
+  if(isNewFile) {
+    if(FILE* clearFile = std::fopen(logPath.c_str(), "w"))
+      std::fclose(clearFile);
+  }
+
+  if(FILE* out = std::freopen(logPath.c_str(), "a", stdout)) {
+    std::setvbuf(stdout, nullptr, _IOLBF, 0);
+    std::freopen(logPath.c_str(), "a", stderr);
+    if(isNewFile)
+      std::printf("Bleep logging redirected to %s\n", logPath.c_str());
+  }
+}
+
+}
 
 class MyApplication: public Platform::Application {
 public:
@@ -118,11 +160,13 @@ MyApplication::MyApplication(const Arguments& arguments):
     .setWindowFlags(Configuration::WindowFlag::Resizable)}
 {
   using namespace Math::Literals;
+  redirectLogsToFileIfNeeded();
   controller = new Controller();
   init_gamepad();
   controller->init();
   _steamIntegration.reset(new SteamIntegration());
-  _steamIntegration->initialize();
+  const std::string manifestPath = resolveActionManifestPath();
+  _steamIntegration->initialize(manifestPath);
 
   _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(), windowSize(), framebufferSize());
 
