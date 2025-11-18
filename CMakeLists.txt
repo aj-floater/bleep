@@ -5,6 +5,17 @@ set(CMAKE_C_FLAGS_DEBUG "-g -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -DDEBUG")
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
 
+option(BLEEP_ENABLE_STEAM "Enable Steam Input/Cloud support via the bundled Steamworks SDK" ON)
+set(STEAMWORKS_SDK_ROOT "${PROJECT_SOURCE_DIR}/steam-sdk" CACHE PATH "Path to the Steamworks SDK bundle")
+set(STEAMWORKS_SDK_INCLUDE_DIR "${STEAMWORKS_SDK_ROOT}/public" CACHE PATH "Steamworks SDK include directory")
+if(APPLE)
+    set(STEAMWORKS_SDK_LIB_DIR "${STEAMWORKS_SDK_ROOT}/redistributable_bin/osx" CACHE PATH "Steamworks SDK macOS lib directory")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(STEAMWORKS_SDK_LIB_DIR "${STEAMWORKS_SDK_ROOT}/redistributable_bin/linux64" CACHE PATH "Steamworks SDK Linux lib directory")
+elseif(WIN32)
+    set(STEAMWORKS_SDK_LIB_DIR "${STEAMWORKS_SDK_ROOT}/redistributable_bin/win64" CACHE PATH "Steamworks SDK Windows lib directory")
+endif()
+
 # Add Corrade as a subproject
 add_subdirectory(corrade EXCLUDE_FROM_ALL)
 

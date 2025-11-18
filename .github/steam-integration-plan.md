@@ -6,8 +6,13 @@
     - Read `steam_input_manifest.vdf`/`xbox_controller.vdf` to capture action sets and button coverage
     - Note helper calls for controller discovery, LED color, remote play metadata
   - Done: Confirmed Example grabs digital/analog handles per action set, polls with `FindActiveSteamInputDevice`, and exposes helper prompts/LED hooks we can mirror for Deck/Xbox parity
-- [ ] Prepare bleep build to consume bundled steam-sdk on macOS and Steam Deck
+- [x] Prepare bleep build to consume bundled steam-sdk on macOS and Steam Deck
   - Confirm include/library paths and conditional compilation remain cross compatible
+  - Plan for this step:
+    - Audit root + `bleep/src` CMake for Steam SDK references and add shared options pointing to `steam-sdk`
+    - Inject include/lib paths for macOS frameworks + Steam Deck linux libs guarded by appropriate platform checks
+    - Ensure resulting targets expose SteamInput headers/libs to later steps without breaking non-Steam builds
+  - Done: Added `BLEEP_ENABLE_STEAM` toggle, shared SDK include/lib cache vars, and platform-conditional `libsteam_api` linkage so both macOS and Steam Deck builds automatically consume the bundled SDK while non-Steam builds keep working
 - [ ] Scaffold Steam Input init/teardown code mimicking SteamworksExample pattern
   - Provide cross-platform bootstrapping that works on macOS and Steam Deck
 - [ ] Implement controller action set + action mapping covering every Steam Deck + Xbox button
