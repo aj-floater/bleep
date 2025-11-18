@@ -23,6 +23,7 @@
 #include "controller.h"
 #include "cubeDrawable.h"
 #include "meshDrawable.h"
+#include "SteamIntegration.h"
 
 float _stepTime = 0.3f;
 float _stepSize = 0.4f;
@@ -75,6 +76,7 @@ bool playing = false;
 class MyApplication: public Platform::Application {
 public:
   explicit MyApplication(const Arguments& arguments);
+  ~MyApplication();
 
   void viewportEvent(ViewportEvent& event) override;
 
@@ -113,6 +115,7 @@ MyApplication::MyApplication(const Arguments& arguments):
     .setWindowFlags(Configuration::WindowFlag::Resizable)}
 {
   using namespace Math::Literals;
+  SteamIntegration::initialize();
   init_gamepad();
   controller->init();
 
@@ -162,6 +165,11 @@ MyApplication::MyApplication(const Arguments& arguments):
   setMinimalLoopPeriod(16);
 
   _timeline.start();
+}
+
+MyApplication::~MyApplication()
+{
+  SteamIntegration::shutdown();
 }
 
 bool showLegInfoWindow = false; // A flag to track whether to show the leg info window or not
@@ -422,6 +430,7 @@ SDL_GameController *ps3controller;
 double timeSinceLastSend;
 
 void MyApplication::drawEvent() {
+  SteamIntegration::pump();
   GL::defaultFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
 
   controller->update();

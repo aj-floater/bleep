@@ -13,12 +13,48 @@
     - Inject include/lib paths for macOS frameworks + Steam Deck linux libs guarded by appropriate platform checks
     - Ensure resulting targets expose SteamInput headers/libs to later steps without breaking non-Steam builds
   - Done: Added `BLEEP_ENABLE_STEAM` toggle, shared SDK include/lib cache vars, and platform-conditional `libsteam_api` linkage so both macOS and Steam Deck builds automatically consume the bundled SDK while non-Steam builds keep working
-- [ ] Scaffold Steam Input init/teardown code mimicking SteamworksExample pattern
+- [x] Scaffold Steam Input init/teardown code mimicking SteamworksExample pattern
   - Provide cross-platform bootstrapping that works on macOS and Steam Deck
-- [ ] Implement controller action set + action mapping covering every Steam Deck + Xbox button
+  - Plan for this step:
+    - Add a thin Steam integration module gated by `BLEEP_WITH_STEAM` that wraps `SteamAPI_Init/Shutdown`, `SteamInput()->Init`, and per-frame pump helpers
+    - Hook `MyApplication` startup/shutdown + frame loop to call into the new module so the rest of the runtime can stay SDK-agnostic
+    - Emit graceful warnings / no-ops when Steam isn’t available to keep dev builds running outside Steam
+  - Done: Added `SteamIntegration` helper with init/pump/shutdown that mirrors SteamworksExample flow, invoked from `MyApplication` constructor/destructor and draw loop so runtime now has a centralized Steam Input bootstrap
+- [x] Implement controller action set + action mapping covering every Steam Deck + Xbox button
   - Mirror naming/mapping conventions from SteamworksExample to stay consistent
+  - Plan for this step:
+    - Port the action-set/action-handle enums/arrays from SteamworksExample and adapt them to Bleep’s controller needs (Deck + Xbox coverage)
+    - Define a manifest path constant + helper to load Steam Input manifests on startup so reviewers can test easily; add Debug logs for missing/loaded assets
+    - Store the action handles + controller state holder in `SteamIntegration` (or a sibling module) and expose minimal getters so future steps can poll values without reimplementing lookup logic
+  - Done: Added a Bleep-specific Steam Input manifest covering Deck/Xbox buttons, copied it into builds, and extended `SteamIntegration` with enums/storage, manifest discovery, and verbose logging so every digital/analog handle is reported (or warned) for the testers
 - [ ] Route Steam Input state into the existing controller system (poll/update loop)
   - Keep implementation incremental to avoid large refactors
+- [x] Fix MyApplication destructor override compile error
+  - Plan for this step:
+    - Drop the `override` specifier from `~MyApplication` so it matches the base type signature
+    - Confirm Steam integration shutdown still happens via destructor call
+  - Done: Removed the `override` keyword from `~MyApplication` so it compiles while still invoking Steam shutdown logic
+- [x] Fix Steamworks SDK include/lib discovery to match bundled `steam_sdk`
+  - Ensure default paths resolve without manual cache edits
+  - Plan for this step:
+    - Detect whether `steam_sdk` exists and adjust `STEAMWORKS_SDK_ROOT`/lib defaults accordingly
+    - Keep overrides working for custom installs while warning if neither layout is found
+  - Done: Root CMake now auto-picks `steam_sdk` when present and warns if neither layout exists so the bundled SDK is used without manual cache tweaks
+- [x] Ensure Steam runtime libraries are deployed beside the executable
+  - Plan for this step:
+    - Teach the CMake target to copy the resolved `libsteam_api` next to `bleep` after each build
+    - Keep behavior cross-platform (at least macOS + Steam Deck) so runtime dyld/ld finds the library without manual moves
+  - Done: Added a post-build copy that drops the resolved Steam runtime library into the `bleep` binary directory so dyld/ld can load it without manual steps
+- [x] Switch Steam initialization to `SteamAPI_InitEx` for clearer error messages
+  - Plan for this step:
+    - Replace the `SteamAPI_Init` call with `SteamAPI_InitEx` inside `SteamIntegration::initialize`
+    - Log the returned `ESteamAPIInitResult` and Steam-provided error string so testers can diagnose startup failures more easily
+  - Done: `SteamIntegration` now uses `SteamAPI_InitEx`, logging the enum result and localized error text so startup failures explain whether Steam isn’t running or versions mismatch
+- [x] Provide a default `steam_appid.txt` (480) for non-Steam dev runs
+  - Plan for this step:
+    - Generate `steam_appid.txt` at configure or build time under `bleep`’s binary dir so Steam initializes without the client
+    - Document the default appID (480) and keep it easy to override for real publishing
+  - Done: Added a cacheable `STEAM_APPID_DEFAULT` (default 480) and a post-build step that drops `steam_appid.txt` beside the executable for dev/testing, while remaining easy to override for release builds
 - [ ] Implement fallback paths when Steam Input is unavailable (non-Steam builds, dev machines)
 - [ ] Add Steam Cloud config referencing steam-sdk guidance
   - Keep file layout identical across Steam Deck and macOS builds

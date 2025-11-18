@@ -19,6 +19,7 @@ set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 add_executable(bleep
 
 ArcBall.cpp
+SteamIntegration.cpp
 main.cpp
 ../include/MacSerialPort/SerialPort/SerialPort.cpp
     )
@@ -30,6 +31,11 @@ add_dependencies(bleep
     MagnumPlugins::AssimpImporter)
 
 if(BLEEP_ENABLE_STEAM)
+    set(BLEEP_STEAM_INPUT_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/../steam_input_manifest.vdf")
+    if(EXISTS "${BLEEP_STEAM_INPUT_MANIFEST}")
+        target_compile_definitions(bleep PRIVATE BLEEP_STEAM_INPUT_MANIFEST_PATH="${BLEEP_STEAM_INPUT_MANIFEST}")
+    endif()
+
     if(NOT EXISTS "${STEAMWORKS_SDK_INCLUDE_DIR}/steam/steam_api.h")
         message(FATAL_ERROR "Steamworks SDK headers not found at ${STEAMWORKS_SDK_INCLUDE_DIR}. Adjust STEAMWORKS_SDK_INCLUDE_DIR.")
     endif()
@@ -84,6 +90,16 @@ if(BLEEP_ENABLE_STEAM)
     else()
         target_link_libraries(bleep PRIVATE "${_BLEEP_STEAM_SDK_LIB}")
         target_compile_definitions(bleep PRIVATE BLEEP_WITH_STEAM=1)
+        add_custom_command(TARGET bleep POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_BLEEP_STEAM_SDK_LIB}"
+                "$<TARGET_FILE_DIR:bleep>"
+            COMMENT "Copying Steam runtime library beside bleep executable")
+        if(STEAM_APPID_DEFAULT)
+            add_custom_command(TARGET bleep POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E echo "${STEAM_APPID_DEFAULT}" > "$<TARGET_FILE_DIR:bleep>/steam_appid.txt"
+                COMMENT "Writing default steam_appid.txt (${STEAM_APPID_DEFAULT})")
+        endif()
     endif()
 endif()
 
