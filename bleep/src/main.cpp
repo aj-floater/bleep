@@ -1,5 +1,11 @@
 #include <Magnum/GL/DefaultFramebuffer.h>
+#include <Magnum/GL/Framebuffer.h>
 #include <Magnum/GL/Renderer.h>
+#include <Magnum/GL/Renderbuffer.h>
+#include <Magnum/GL/RenderbufferFormat.h>
+#include <Magnum/GL/Sampler.h>
+#include <Magnum/GL/Texture.h>
+#include <Magnum/GL/TextureFormat.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
 
 #include <Magnum/Platform/Sdl2Application.h>
@@ -14,6 +20,8 @@
 #include <Magnum/MeshTools/Compile.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Math/Color.h>
+#include <Magnum/Math/Vector2.h>
+#include <Magnum/Math/Functions.h>
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/Trade/MeshData.h>
 #include <SDL.h>
@@ -92,6 +100,7 @@ public:
   void mouseScrollEvent(MouseScrollEvent& event) override;
   void textInputEvent(TextInputEvent& event) override;
   void handlePinchZoom(float distanceDelta);
+  void handleTouchpadEvent(const SDL_ControllerTouchpadEvent& event);
 
   Timeline _timeline;
 
@@ -101,6 +110,10 @@ private:
   void renderGUI();
   void drawEvent() override;
   void setFullscreen(bool enable);
+  void ensureViewportRenderTarget(const Vector2i& size);
+  void drawSceneToViewport();
+  bool viewportContains(const Vector2i& position) const;
+  Vector2i toViewportCoordinates(const Vector2i& position) const;
   
 
   Vector2i _lastPosition;
@@ -112,6 +125,19 @@ private:
   Controller* controller;
   bool _isFullscreen{false};
   Vector2i _windowedSize;
+  GL::Texture2D _viewportTexture{NoCreate};
+  GL::Renderbuffer _viewportDepth{NoCreate};
+  GL::Framebuffer _viewportFramebuffer{NoCreate};
+  Vector2i _viewportSize{1, 1};
+  Vector2 _viewportWindowPos{0.0f};
+  Vector2 _viewportWindowSize{1.0f};
+  bool _viewportInteractionActive{false};
+  static constexpr int MaxTrackpadFingers = 2;
+  struct TouchpadFingerState {
+    bool active{false};
+    Vector2 lastPosition{0.0f};
+  };
+  TouchpadFingerState _leftTrackpadFingers[MaxTrackpadFingers];
 };
 
 MyApplication::MyApplication(const Arguments& arguments):
@@ -173,6 +199,9 @@ MyApplication::MyApplication(const Arguments& arguments):
 
   setMinimalLoopPeriod(16);
   _windowedSize = windowSize();
+  _viewportWindowPos = Vector2{0.0f};
+  _viewportWindowSize = Vector2{windowSize()};
+  ensureViewportRenderTarget(windowSize());
 
   _timeline.start();
 
@@ -229,6 +258,25 @@ void MyApplication::renderGUI() {
       startTextInput();
   else if(!ImGui::GetIO().WantTextInput && isTextInputActive())
       stopTextInput();
+
+  if(ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse)) {
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    viewportPanelSize.x = Math::max(viewportPanelSize.x, 1.0f);
+    viewportPanelSize.y = Math::max(viewportPanelSize.y, 1.0f);
+    Vector2i desiredViewportSize{
+      Math::max(1, int(viewportPanelSize.x)),
+      Math::max(1, int(viewportPanelSize.y))
+    };
+    _viewportWindowPos = Vector2{ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y};
+    _viewportWindowSize = Vector2{viewportPanelSize.x, viewportPanelSize.y};
+    ensureViewportRenderTarget(desiredViewportSize);
+    if(_arcballCamera)
+      _arcballCamera->reshape(desiredViewportSize, desiredViewportSize);
+    drawSceneToViewport();
+    ImGui::Image(reinterpret_cast<ImTextureID>(&_viewportTexture),
+      viewportPanelSize, ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+  }
+  ImGui::End();
 
   
   // ImGui::ShowDemoWindow();
@@ -447,21 +495,13 @@ SDL_GameController *ps3controller;
 double timeSinceLastSend;
 
 void MyApplication::drawEvent() {
-  GL::defaultFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
-
   controller->update();
 
-  // debuggingLeg->NewAnimation();
   float deltaTime = _timeline.currentFrameDuration();
  
   debuggingLeg->update(deltaTime);
 
   body->update(deltaTime);
-
-  _arcballCamera->update();
-    _arcballCamera->draw(_drawables);
-
-  renderGUI();
 
   ps3controller = findController();
   controller->UpdateFromGameController(ps3controller);
@@ -536,6 +576,11 @@ void MyApplication::drawEvent() {
     }
   }
   #endif
+
+  GL::defaultFramebuffer.bind();
+  GL::defaultFramebuffer.clear(GL::FramebufferClear::Color);
+
+  renderGUI();
 
   swapBuffers();
   redraw();
@@ -637,34 +682,46 @@ void MyApplication::keyReleaseEvent(KeyEvent& event) {
 }
 
 void MyApplication::mousePressEvent(MouseEvent& event) {
+    if(_arcballCamera && viewportContains(event.position())) {
+        _viewportInteractionActive = true;
+        _arcballCamera->initTransformation(toViewportCoordinates(event.position()));
+        event.setAccepted();
+        redraw();
+        return;
+    }
+
     if (_imgui.handleMousePressEvent(event)) return;
-
-    _arcballCamera->initTransformation(event.position());
-
-    event.setAccepted();
-    redraw(); /* camera has changed, redraw! */
 }
 
 void MyApplication::mouseReleaseEvent(MouseEvent& event) {
+    if(_viewportInteractionActive) {
+        _viewportInteractionActive = false;
+        event.setAccepted();
+        redraw();
+        return;
+    }
+
     bool handled = _imgui.handleMouseReleaseEvent(event);
+    _viewportInteractionActive = false;
     if(handled) return;
 }
 
 void MyApplication::mouseMoveEvent(MouseMoveEvent& event) {
+    if(_viewportInteractionActive && _arcballCamera) {
+        if (event.buttons() == MouseMoveEvent::Button::Right ||
+            (event.modifiers() & MouseMoveEvent::Modifier::Shift)) {
+            _arcballCamera->translate(toViewportCoordinates(event.position()));
+        } else {
+            _arcballCamera->rotate(toViewportCoordinates(event.position()));
+        }
+        event.setAccepted();
+        redraw();
+        return;
+    }
+
     if (_imgui.handleMouseMoveEvent(event)) return;
 
     if(!event.buttons()) return;
-
-    if (event.buttons() == MouseMoveEvent::Button::Right) {
-        _arcballCamera->translate(event.position());
-    } else if (event.modifiers() & MouseMoveEvent::Modifier::Shift) {
-        _arcballCamera->translate(event.position());
-    } else {
-        _arcballCamera->rotate(event.position());
-    }
-
-    event.setAccepted();
-    redraw(); /* camera has changed, redraw! */
 }
 
 void MyApplication::mouseScrollEvent(MouseScrollEvent& event) {
@@ -687,6 +744,85 @@ void MyApplication::handlePinchZoom(float distanceDelta) {
     if(!_arcballCamera || Math::abs(distanceDelta) < 1.0e-4f) return;
     const float pinchZoomSpeed = 200.0f;
     _arcballCamera->zoom(distanceDelta * pinchZoomSpeed);
+}
+
+void MyApplication::ensureViewportRenderTarget(const Vector2i& size) {
+    if(size == _viewportSize && _viewportFramebuffer.id()) {
+        _viewportFramebuffer.setViewport({{}, _viewportSize});
+        return;
+    }
+
+    _viewportSize = size;
+
+    _viewportTexture = GL::Texture2D{};
+    _viewportTexture
+        .setMinificationFilter(GL::SamplerFilter::Linear)
+        .setMagnificationFilter(GL::SamplerFilter::Linear)
+        .setWrapping(GL::SamplerWrapping::ClampToEdge)
+        .setStorage(1, GL::TextureFormat::RGBA8, _viewportSize);
+
+    _viewportDepth = GL::Renderbuffer{};
+    _viewportDepth.setStorage(GL::RenderbufferFormat::Depth24Stencil8, _viewportSize);
+
+    _viewportFramebuffer = GL::Framebuffer{{{}, _viewportSize}};
+    _viewportFramebuffer
+        .attachTexture(GL::Framebuffer::ColorAttachment{0}, _viewportTexture, 0)
+        .attachRenderbuffer(GL::Framebuffer::BufferAttachment::DepthStencil, _viewportDepth)
+        .setViewport({{}, _viewportSize});
+}
+
+void MyApplication::drawSceneToViewport() {
+    if(!_arcballCamera) return;
+    _viewportFramebuffer.bind();
+    _viewportFramebuffer.clear(GL::FramebufferClear::Color|GL::FramebufferClear::Depth);
+    _arcballCamera->update();
+    _arcballCamera->draw(_drawables);
+    GL::defaultFramebuffer.bind();
+}
+
+bool MyApplication::viewportContains(const Vector2i& position) const {
+    if(_viewportWindowSize.x() <= 0.0f || _viewportWindowSize.y() <= 0.0f) return false;
+    const float minX = _viewportWindowPos.x();
+    const float minY = _viewportWindowPos.y();
+    const float maxX = minX + _viewportWindowSize.x();
+    const float maxY = minY + _viewportWindowSize.y();
+    return position.x() >= minX && position.x() < maxX &&
+           position.y() >= minY && position.y() < maxY;
+}
+
+Vector2i MyApplication::toViewportCoordinates(const Vector2i& position) const {
+    Vector2 relative{Float(position.x()), Float(position.y())};
+    relative -= _viewportWindowPos;
+    relative = Math::clamp(relative, Vector2{0.0f}, _viewportWindowSize);
+    return Vector2i{int(relative.x()), int(relative.y())};
+}
+
+void MyApplication::handleTouchpadEvent(const SDL_ControllerTouchpadEvent& event) {
+    if(!_arcballCamera || event.touchpad != 0) return;
+    if(event.finger < 0 || event.finger >= MaxTrackpadFingers) return;
+    auto& fingerState = _leftTrackpadFingers[event.finger];
+    const Vector2 currentPosition{event.x, event.y};
+    switch(event.type) {
+      case SDL_CONTROLLERTOUCHPADDOWN:
+        fingerState.active = true;
+        fingerState.lastPosition = currentPosition;
+        break;
+      case SDL_CONTROLLERTOUCHPADUP:
+        fingerState.active = false;
+        break;
+      case SDL_CONTROLLERTOUCHPADMOTION:
+        if(!fingerState.active) break;
+        {
+          const float panSpeed = 3.0f;
+          Vector2 delta = currentPosition - fingerState.lastPosition;
+          fingerState.lastPosition = currentPosition;
+          Vector2 ndcDelta{delta.x(), -delta.y()};
+          _arcballCamera->translateDelta(ndcDelta * panSpeed);
+        }
+        break;
+      default:
+        break;
+    }
 }
 
 void MyApplication::setFullscreen(bool enable) {

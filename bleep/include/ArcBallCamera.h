@@ -67,7 +67,9 @@ class ArcBallCamera: public ArcBall {
         /* Update screen and viewport size after the window has been resized */
         void reshape(const Vector2i& windowSize, const Vector2i& viewportSize) {
             _windowSize = windowSize;
-            _camera->setViewport(viewportSize);
+            _camera->setProjectionMatrix(Matrix4::perspectiveProjection(
+                _fov, Vector2{viewportSize}.aspectRatio(), 0.01f, 100.0f))
+                .setViewport(viewportSize);
         }
 
         /* Update the SceneGraph camera if arcball has been changed */
