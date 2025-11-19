@@ -16,6 +16,7 @@
 #include <Magnum/Math/Color.h>
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/Trade/MeshData.h>
+#include <SDL.h>
 
 #include "ArcBall.h"
 #include "ArcBallCamera.h"
@@ -98,6 +99,7 @@ private:
 
   void renderGUI();
   void drawEvent() override;
+  void setFullscreen(bool enable);
   
 
   Vector2i _lastPosition;
@@ -107,11 +109,14 @@ private:
   GraphicsBody* body;
   Cube* cube;
   Controller* controller;
+  bool _isFullscreen{false};
+  Vector2i _windowedSize;
 };
 
 MyApplication::MyApplication(const Arguments& arguments):
   Platform::Application{arguments, Configuration{}
     .setTitle("Bleep")
+    .setSize({1280, 800})
     .setWindowFlags(Configuration::WindowFlag::Resizable)}
 {
   using namespace Math::Literals;
@@ -166,6 +171,7 @@ MyApplication::MyApplication(const Arguments& arguments):
   body->controllerPointer = controller;
 
   setMinimalLoopPeriod(16);
+  _windowedSize = windowSize();
 
   _timeline.start();
 
@@ -240,6 +246,13 @@ void MyApplication::renderGUI() {
       if (ImGui::RadioButton("Show leg", debuggingLeg->showDebuggingWindow))
         debuggingLeg->showDebuggingWindow = !debuggingLeg->showDebuggingWindow;
 
+      ImGui::EndMenu();
+    }
+    if(ImGui::BeginMenu("View")){
+      bool fullscreen = _isFullscreen;
+      if(ImGui::MenuItem("Fullscreen", nullptr, &fullscreen)){
+        setFullscreen(fullscreen);
+      }
       ImGui::EndMenu();
     }
 
@@ -659,6 +672,20 @@ void MyApplication::mouseScrollEvent(MouseScrollEvent& event) {
 
 void MyApplication::textInputEvent(TextInputEvent& event) {
     if(_imgui.handleTextInputEvent(event)) return;
+}
+
+void MyApplication::setFullscreen(bool enable) {
+#if !defined(CORRADE_TARGET_EMSCRIPTEN)
+  if(enable == _isFullscreen) return;
+  if(enable) {
+    _windowedSize = windowSize();
+    SDL_SetWindowFullscreen(window(), SDL_WINDOW_FULLSCREEN_DESKTOP);
+  } else {
+    SDL_SetWindowFullscreen(window(), 0);
+    setWindowSize(_windowedSize);
+  }
+  _isFullscreen = enable;
+#endif
 }
 
 MAGNUM_APPLICATION_MAIN(MyApplication)
