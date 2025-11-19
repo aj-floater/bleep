@@ -177,13 +177,25 @@ public:
   void showGUI(){
     ImGui::Begin("Joystick Controller");
 
-    ImVec2 position = ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowWidth()/2 - 50, ImGui::GetWindowPos().y + ImGui::GetWindowHeight()/2);
-    DrawJoystick(leftJoystick.x(), leftJoystick.y(), position, 40);
+    ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+    ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
+    ImVec2 windowPos = ImGui::GetWindowPos();
+    ImVec2 contentSize = ImVec2(contentMax.x - contentMin.x, contentMax.y - contentMin.y);
+    ImVec2 contentTL = ImVec2(windowPos.x + contentMin.x, windowPos.y + contentMin.y);
 
-    position = ImVec2(ImGui::GetWindowPos().x + ImGui::GetWindowWidth()/2 + 50, ImGui::GetWindowPos().y + ImGui::GetWindowHeight()/2);
-    DrawJoystick(rightJoystick.x(), rightJoystick.y(), position, 40);
+    float joystickRadius = 40.0f;
+    float joystickSpacing = 20.0f;
+    float lineSpacing = 80.0f;
+    float totalHeight = joystickRadius * 2.0f;
+    ImVec2 leftCenter = ImVec2(contentTL.x + joystickRadius + joystickSpacing,
+                               contentTL.y + totalHeight * 0.5f);
+    ImVec2 rightCenter = ImVec2(contentTL.x + contentSize.x - joystickRadius - joystickSpacing,
+                                contentTL.y + totalHeight * 0.5f);
+
+    DrawJoystick(leftJoystick.x(), leftJoystick.y(), leftCenter, joystickRadius);
+    DrawJoystick(rightJoystick.x(), rightJoystick.y(), rightCenter, joystickRadius);
     
-    ImGui::InvisibleButton("Spacer", ImVec2(1.0f, 100.0f)); // Creates 50px horizontal and 20px vertical space
+    ImGui::InvisibleButton("Spacer", ImVec2(1.0f, lineSpacing)); // Creates spacing below joysticks
 
     ImGui::SeparatorText("Triggers");
     float triggerBarWidth = ImGui::GetContentRegionAvail().x;
