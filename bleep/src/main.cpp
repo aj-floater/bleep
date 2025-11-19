@@ -623,9 +623,6 @@ void MyApplication::keyReleaseEvent(KeyEvent& event) {
 
 void MyApplication::mousePressEvent(MouseEvent& event) {
     if (_imgui.handleMousePressEvent(event)) return;
-    /* Enable mouse capture so the mouse can drag outside of the window */
-    /** @todo replace once https://github.com/mosra/magnum/pull/419 is in */
-    SDL_CaptureMouse(SDL_TRUE);
 
     _arcballCamera->initTransformation(event.position());
 
@@ -634,11 +631,8 @@ void MyApplication::mousePressEvent(MouseEvent& event) {
 }
 
 void MyApplication::mouseReleaseEvent(MouseEvent& event) {
-    if (_imgui.handleMouseReleaseEvent(event)) return;
-    /* Disable mouse capture again */
-    /** @todo replace once https://github.com/mosra/magnum/pull/419 is in */
-
-    SDL_CaptureMouse(SDL_FALSE);
+    bool handled = _imgui.handleMouseReleaseEvent(event);
+    if(handled) return;
 }
 
 void MyApplication::mouseMoveEvent(MouseMoveEvent& event) {
