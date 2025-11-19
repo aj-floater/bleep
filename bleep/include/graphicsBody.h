@@ -60,6 +60,9 @@ public:
     _scale = Vector3(10.1f);
 
     _position = Vector3(0.0f, 0.8f, 0.0f);
+    defaultPosition = _position;
+    defaultRotation = _rotation;
+    _previousMode = mode;
 
     // Initialize legs using arrays
     for (int i = 0; i < numLegs; i++) {
@@ -293,6 +296,7 @@ public:
 
   Vector3 defaultPosition;
   Quaternion defaultRotation;
+  int _previousMode = STANDING;
 
   void StandingMode(){
     if (controllerPointer->CheckIfJoysticksCentered()){
@@ -320,6 +324,14 @@ public:
 
   void update(Float deltaTime) {
     HandleAnimation(deltaTime);
+
+    if(mode != _previousMode) {
+      if(mode == STANDING) {
+        defaultPosition = _position;
+        defaultRotation = _rotation;
+      }
+      _previousMode = mode;
+    }
 
     if (mode == WALKING) WalkingMode();
     if (mode == STANDING) StandingMode();
