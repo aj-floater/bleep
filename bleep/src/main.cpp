@@ -464,6 +464,7 @@ void MyApplication::drawEvent() {
   renderGUI();
 
   ps3controller = findController();
+  controller->UpdateFromGameController(ps3controller);
 
   if(ps3controller) {
     if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP)) {
@@ -488,14 +489,12 @@ void MyApplication::drawEvent() {
   }
   const float leftTriggerValue = controller->GetLeftTriggerValue();
   const float rightTriggerValue = controller->GetRightTriggerValue();
-  const float triggerDelta = rightTriggerValue - leftTriggerValue;
-  if(Math::abs(triggerDelta) > 0.01f) {
-    Debug{} << "Trigger values - Left:" << leftTriggerValue << "Right:" << rightTriggerValue << "Delta:" << triggerDelta;
-    float newHeight = body->_position.y() + triggerDelta * deltaTime * 2.0f;
-    if(newHeight > 1.5f) newHeight = 1.5f;
-    if(newHeight < 0.25f) newHeight = 0.25f;
-    body->_position.y() = newHeight;
-  }
+  constexpr float defaultStepTime = 0.3f;
+  constexpr float minStepTime = 0.15f;
+  constexpr float defaultStepSize = 0.4f;
+  constexpr float maxStepSize = 0.8f;
+  _stepTime = Math::lerp(defaultStepTime, minStepTime, leftTriggerValue);
+  _stepSize = Math::lerp(defaultStepSize, maxStepSize, rightTriggerValue);
 
   body->getAllJointAngles();
   out = body->intArrayToString(body->jointAngles, 18);

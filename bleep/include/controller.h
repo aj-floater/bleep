@@ -244,6 +244,7 @@ public:
 
   void doJoystickAxisMotion(SDL_JoyAxisEvent& event)
   {
+    if(usingGameControllerAPI) return;
     int i = getJoyIndex(event.which);
     
     if((event.value < -3200) || (event.value > 3200)) 
@@ -474,6 +475,16 @@ public:
   float GetRightTriggerValue() const {
     return rightTrigger;
   }
+  void UpdateFromGameController(SDL_GameController* gamepad) {
+    usingGameControllerAPI = gamepad != nullptr;
+    if(!gamepad) return;
+    leftJoystick.x() = normalizeAxis(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTX));
+    leftJoystick.y() = normalizeAxis(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTY));
+    rightJoystick.x() = normalizeAxis(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTX));
+    rightJoystick.y() = normalizeAxis(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTY));
+    leftTrigger = normalizeTriggerValue(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_TRIGGERLEFT));
+    rightTrigger = normalizeTriggerValue(SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_TRIGGERRIGHT));
+  }
 
   bool CheckIfJoysticksCentered(){
     // Checks if both joysticks are centered (or close enough to be considered centered)
@@ -493,6 +504,7 @@ public:
   Vector2 rightMovement;
   float leftTrigger;
   float rightTrigger;
+  bool usingGameControllerAPI = false;
 
   bool centered = false;
 
@@ -500,8 +512,21 @@ public:
   bool rightbutton;
 
 private:
+  static float normalizeAxis(Sint16 value) {
+    float normalized = static_cast<float>(value) / 32767.0f;
+    if (normalized < -1.0f)
+      return -1.0f;
+    if (normalized > 1.0f)
+      return 1.0f;
+    return normalized;
+  }
   static float normalizeTriggerValue(Sint16 value) {
-    float normalized = (static_cast<float>(value) + 32768.0f) / 65535.0f;
+    float normalized;
+    if(value >= 0) {
+      normalized = static_cast<float>(value) / 32767.0f;
+    } else {
+      normalized = (static_cast<float>(value) + 32768.0f) / 65535.0f;
+    }
     if (normalized < 0.0f)
       return 0.0f;
     if (normalized > 1.0f)
