@@ -91,6 +91,7 @@ public:
   void mouseMoveEvent(MouseMoveEvent& event) override;
   void mouseScrollEvent(MouseScrollEvent& event) override;
   void textInputEvent(TextInputEvent& event) override;
+  void handlePinchZoom(float distanceDelta);
 
   Timeline _timeline;
 
@@ -464,14 +465,25 @@ void MyApplication::drawEvent() {
 
   ps3controller = findController();
 
-  if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP)) {
-    if (body->_position.y() < 1.5f){
-      body->_position += Vector3(0, deltaTime * 2.0f, 0);
+  if(ps3controller) {
+    if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_UP)) {
+      if (body->_position.y() < 1.5f){
+        body->_position += Vector3(0, deltaTime * 2.0f, 0);
+      }
     }
-  }
-  if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN)) {
-    if (body->_position.y() > 0.25f){
-      body->_position -= Vector3(0, deltaTime * 2.0f, 0);
+    if (SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_DPAD_DOWN)) {
+      if (body->_position.y() > 0.25f){
+        body->_position -= Vector3(0, deltaTime * 2.0f, 0);
+      }
+    }
+    const float zoomSpeed = 75.0f;
+    if(_arcballCamera) {
+      if(SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_PADDLE1)) {
+        _arcballCamera->zoom(deltaTime * zoomSpeed);
+      }
+      if(SDL_GameControllerGetButton(ps3controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_PADDLE2)) {
+        _arcballCamera->zoom(-deltaTime * zoomSpeed);
+      }
     }
   }
   const float leftTriggerValue = controller->GetLeftTriggerValue();
@@ -581,6 +593,10 @@ void MyApplication::anyEvent(SDL_Event& event) {
 
         break;
 
+    case SDL_MULTIGESTURE:
+      handlePinchZoom(event.mgesture.dDist);
+      break;
+
     default:
       break;
   }
@@ -666,6 +682,12 @@ void MyApplication::mouseScrollEvent(MouseScrollEvent& event) {
 
 void MyApplication::textInputEvent(TextInputEvent& event) {
     if(_imgui.handleTextInputEvent(event)) return;
+}
+
+void MyApplication::handlePinchZoom(float distanceDelta) {
+    if(!_arcballCamera || Math::abs(distanceDelta) < 1.0e-4f) return;
+    const float pinchZoomSpeed = 200.0f;
+    _arcballCamera->zoom(distanceDelta * pinchZoomSpeed);
 }
 
 void MyApplication::setFullscreen(bool enable) {
